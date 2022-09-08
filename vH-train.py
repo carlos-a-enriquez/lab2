@@ -42,15 +42,16 @@ def encode_seq(sequence, alphabet):
         letter[value] = 1
         onehot_encoded.append(letter)
 
-    return np.array(onehot_encoded)
+    return np.array(onehot_encoded).transpose()
     
     
 def PSPM_gen(sequences):
 	'''This function will generate the Position Specific Probability Matrix.
-	The argument "sequences" expects hot-encoded sequences'''
-	pspm = np.ones((20, 15))
-	#for seq in sequences:
-	#	pspm+seq
+	The argument "sequences" expects a list of hot-encoded sequences'''
+	pspm = np.ones((20, 15), dtype=int)
+	for seq in sequences:
+		#pass
+		pspm = pspm+seq
 	return pspm
 
     
@@ -73,9 +74,10 @@ if __name__ == "__main__":
 	
 	#Running workflow
 	train_seq_list = cleavage_seq(train_sp)  #obtaining sequence list
-	one_hot_train = encode_seq(train_seq_list[0], alphabet) #one hot encoding
-	pspm = PSPM_gen(train_seq_list[0])
-	print(one_hot_train, train_seq_list[0], pspm)  #debugging one-hot encoding
+	one_hot_sequences= [encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
+	pspm = PSPM_gen(one_hot_sequences)
+	#print(one_hot_sequences, train_seq_list[0], pspm)
+	print(pspm)  #debugging one-hot encoding
 	
 	
 
