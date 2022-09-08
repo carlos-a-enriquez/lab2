@@ -75,7 +75,7 @@ if __name__ == "__main__":
 	#Running workflow
 	train_seq_list = cleavage_seq(train_sp)  #obtaining sequence list
 	one_hot_sequences= [encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
-	pspm = PSPM_gen(one_hot_sequences)
+	pspm = PSPM_gen(one_hot_sequences) #Generating the PSPM matrix
 	#print(one_hot_sequences, train_seq_list[0], pspm)
 	print(pspm)  #debugging one-hot encoding
 	
