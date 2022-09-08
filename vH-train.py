@@ -63,7 +63,7 @@ def PSWM(pspm, background_vector):
 	The vector should be in ratios (not percentages) and in the order of the alphabet
 	Note: only lists or numpy arrays are accepted for the background_vector'''
 	if isinstance(background_vector, 'list'):
-		background_vector = np.array(background_vector)
+		background_vector = np.array(background_vector).reshape(20,1) #we need to broadcast this 20x1 transpose vector to the entire 20x15 matrix
 		
 
     
