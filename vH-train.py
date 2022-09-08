@@ -52,6 +52,7 @@ def PSPM_gen(sequences):
 	for seq in sequences:
 		#pass
 		pspm = pspm+seq
+	pspm = pspm/(len(sequences)+20)
 	return pspm
 
     
@@ -77,7 +78,7 @@ if __name__ == "__main__":
 	one_hot_sequences= [encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
 	pspm = PSPM_gen(one_hot_sequences) #Generating the PSPM matrix
 	#print(one_hot_sequences, train_seq_list[0], pspm)
-	print(pspm)  #debugging one-hot encoding
+	print(pspm, pspm.shape)  #debugging one-hot encoding
 	
 	
 
