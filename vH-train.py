@@ -57,13 +57,18 @@ def PSPM_gen(sequences):
 	return pspm
 	
 	
-def PSWM(pspm, background_vector):
+def PSWM_gen(pspm, background_vector):
 	'''This function determines the Position-specific weight matrix by using
 	the PSPM and a background (Swissprot) distribution vector.
 	The vector should be in ratios (not percentages) and in the order of the alphabet
 	Note: only lists or numpy arrays are accepted for the background_vector'''
-	if isinstance(background_vector, 'list'):
+	if isinstance(background_vector, list):
 		background_vector = np.array(background_vector).reshape(20,1) #we need to broadcast this 20x1 transpose vector to the entire 20x15 matrix
+	else:
+		background_vector = background_vector.reshape(20,1) 
+	pswm = pspm/background_vector #broadcasting the background distribution vector to divide all columns by the same values
+	#Compute the logarithms (missing for now)
+	return pswm
 		
 
     
@@ -86,7 +91,10 @@ if __name__ == "__main__":
 	one_hot_sequences= [encode_seq(sequence, env.alphabet) for sequence in train_seq_list] #one hot encoding
 	pspm = PSPM_gen(one_hot_sequences) #Generating the PSPM matrix
 	#print(one_hot_sequences, train_seq_list[0], pspm)
-	print(pspm, pspm.shape, env.aa_ratios_alphabet)  #debugging one-hot encoding
+	
+	pswm = PSWM_gen(pspm, env.aa_ratios_alphabet) #obtaining the PSWM matrix
+	print(pspm, pspm.shape, env.aa_ratios_alphabet, pswm)  #debugging one-hot encoding
+	#print(env.aa_ratios_alphabet, pspm/pswm)  #DEBUG: recovering the background division broadcast and checking that it matches
 	
 	
 
