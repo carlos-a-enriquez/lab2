@@ -4,6 +4,7 @@ import pandas as pd
 import sys
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+import environmental_variables as env
 
 
 
@@ -54,6 +55,16 @@ def PSPM_gen(sequences):
 		pspm = pspm+seq
 	pspm = pspm/(len(sequences)+20)
 	return pspm
+	
+	
+def PSWM(pspm, background_vector):
+	'''This function determines the Position-specific weight matrix by using
+	the PSPM and a background (Swissprot) distribution vector.
+	The vector should be in ratios (not percentages) and in the order of the alphabet
+	Note: only lists or numpy arrays are accepted for the background_vector'''
+	if isinstance(background_vector, 'list'):
+		background_vector = np.array(background_vector)
+		
 
     
     
@@ -61,9 +72,6 @@ def PSPM_gen(sequences):
   
   
 if __name__ == "__main__":
-	#Env variables
-	alphabet = ['A', 'C', 'D', 'E', 'F', 'G','H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-	
 	#Extracting sequences of interest
 	try:
 		train_fh = sys.argv[1]
@@ -75,10 +83,10 @@ if __name__ == "__main__":
 	
 	#Running workflow
 	train_seq_list = cleavage_seq(train_sp)  #obtaining sequence list
-	one_hot_sequences= [encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
+	one_hot_sequences= [encode_seq(sequence, env.alphabet) for sequence in train_seq_list] #one hot encoding
 	pspm = PSPM_gen(one_hot_sequences) #Generating the PSPM matrix
 	#print(one_hot_sequences, train_seq_list[0], pspm)
-	print(pspm, pspm.shape)  #debugging one-hot encoding
+	print(pspm, pspm.shape, env.aa_ratios_alphabet)  #debugging one-hot encoding
 	
 	
 
