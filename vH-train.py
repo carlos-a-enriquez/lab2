@@ -3,7 +3,7 @@
 import pandas as pd
 import sys
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
+#from sklearn.preprocessing import OneHotEncoder
 import environmental_variables as env
 
 
@@ -67,7 +67,9 @@ def PSWM_gen(pspm, background_vector):
 	else:
 		background_vector = background_vector.reshape(20,1) 
 	pswm = pspm/background_vector #broadcasting the background distribution vector to divide all columns by the same values
-	#Compute the logarithms (missing for now)
+	
+	#Compute the logarithms
+	pswm = np.log(pspm)/np.log(2)  #obtaining the base 2 log
 	return pswm
 		
 
