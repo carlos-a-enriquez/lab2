@@ -24,7 +24,12 @@ def predict_seq(sequences, pswm, alphabet):
 				window_score += pswm[next(k for k,res in enumerate(alphabet) if res == char), j] #select the correct residue row (comprehension to '.find' within list) and then select the position column to obtain a score
 			score_list.append(window_score)
 		scores.append(max(score_list))
-	return scores
+	#Rounding the scores
+	scores_array = np.array(scores)
+	scores_array = np.around(scores_array, 2)
+	return scores_array
+	
+
 
 
 if __name__ == "__main__":
@@ -46,4 +51,10 @@ if __name__ == "__main__":
 	
 	#Running workflow (vh-predict)
 	predictions = predict_seq(to_predict, pswm, env.alphabet)
-	print('Predictions:'+'\n', predictions)
+	
+	
+	#Adding predictions to dataframe
+	predictions = pd.Series(predictions)
+	train['scores'] = predictions
+	print('Predictions:'+'\n', train.head())
+	train.to_csv('vh_results.csv')
