@@ -33,7 +33,7 @@ def encode_seq(sequence, alphabet):
     This is a binary representation in which each 'inner list' has one 1 value that corresponds to one of the
     latters of the alphabet.
     Note: This function expects a single sequence"""
-    alphabet = ['A', 'C', 'D', 'E', 'F', 'G','H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+    #alphabet = ['A', 'C', 'D', 'E', 'F', 'G','H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
     char_to_int = dict((c, i) for i, c in enumerate(alphabet))
     integer_encoded = [char_to_int[char] for char in sequence]
     onehot_encoded = list()
@@ -46,10 +46,10 @@ def encode_seq(sequence, alphabet):
     return np.array(onehot_encoded).transpose()
     
     
-def PSPM_gen(sequences):
+def PSPM_gen(sequences, sequence_length):
 	'''This function will generate the Position Specific Probability Matrix.
 	The argument "sequences" expects a list of hot-encoded sequences'''
-	pspm = np.ones((20, 15), dtype=int)
+	pspm = np.ones((20, sequence_length), dtype=int)
 	for seq in sequences:
 		#pass
 		pspm = pspm+seq
@@ -69,7 +69,7 @@ def PSWM_gen(pspm, background_vector):
 	pswm = pspm/background_vector #broadcasting the background distribution vector to divide all columns by the same values
 	
 	#Compute the logarithms
-	pswm = np.log(pspm)/np.log(2)  #obtaining the base 2 log
+	pswm = np.around(np.log2(pswm),2)#obtaining the base 2 log and rounding to 2 decimals
 	return pswm
 		
 
@@ -90,13 +90,33 @@ if __name__ == "__main__":
 	
 	#Running workflow
 	train_seq_list = cleavage_seq(train_sp)  #obtaining sequence list
+	sequence_length = len(train_seq_list[0])
 	one_hot_sequences= [encode_seq(sequence, env.alphabet) for sequence in train_seq_list] #one hot encoding
-	pspm = PSPM_gen(one_hot_sequences) #Generating the PSPM matrix
+	pspm = PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
 	#print(one_hot_sequences, train_seq_list[0], pspm)
 	
 	pswm = PSWM_gen(pspm, env.aa_ratios_alphabet) #obtaining the PSWM matrix
-	print(pspm, pspm.shape, env.aa_ratios_alphabet, pswm)  #debugging one-hot encoding
+	print(pspm, pspm.shape, env.aa_ratios_alphabet)  #debugging one-hot encoding
+	print('#################')
+	print('TRAINING PSWM')
+	print(pswm)
 	#print(env.aa_ratios_alphabet, pspm/pswm)  #DEBUG: recovering the background division broadcast and checking that it matches
+	
+	
+	#Debugging with Castrene's example sequences
+	debug = False
+	if debug:
+		print('###########################')
+		print('Debugging section')
+		train_seq_list = env.castrense_seq 
+		sequence_length = len(train_seq_list[0])
+		one_hot_sequences= [encode_seq(sequence, env.debug_alphabet) for sequence in train_seq_list] #one hot encoding
+		pspm = PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
+		pswm = PSWM_gen(pspm, env.aa_ratios_debug) #obtaining the PSWM matrix
+		print(pspm)
+		print(pspm.shape)
+		print('Background vector'+'\n', env.aa_ratios_debug)
+		print(pswm)
 	
 	
 

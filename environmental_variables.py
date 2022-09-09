@@ -13,3 +13,8 @@ for i,j in zip(aa_list,aa_percentage):
   
 aa_ratios_alphabet = [aa_background_composition[residue]/100 for residue in alphabet] #changing from percentage to ratio and in the alphabet order
 
+
+#Sequences for debugging (using Castrense's example)
+castrense_seq = ['STAAQAEP', 'AVESSPIF', 'LTVALAAE', 'LSLSQSTN', 'MIGVESVR', 'SKPTRAFS']
+debug_alphabet = [residue for residue in 'ARNDCQEGHILKMFPSTWYV']
+aa_ratios_debug = [aa_background_composition[residue]/100 for residue in debug_alphabet]
