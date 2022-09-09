@@ -5,7 +5,7 @@ import sys
 import numpy as np
 #from sklearn.preprocessing import OneHotEncoder
 import environmental_variables as env
-import vH-train as tra
+import vH_train as tra
 
 
 
@@ -20,11 +20,10 @@ def predict_seq(sequences, pswm, alphabet):
 		for i in range(0,(len(seq)-15+1)):
 			#window = 
 			window_score = 0
-			for j,char in enumerate(seq[i:i+14]):
-				window_score += pswm[alphabet.find(char), j] #select the residue row and then select the position column to obtain a score
+			for j,char in enumerate(seq[i:i+15]):
+				window_score += pswm[next(k for k,res in enumerate(alphabet) if res == char), j] #select the correct residue row (comprehension to '.find' within list) and then select the position column to obtain a score
 			score_list.append(window_score)
-		max_score = max(score_list)
-		scores.append(max_score)
+		scores.append(max(score_list))
 	return scores
 
 
@@ -36,14 +35,15 @@ if __name__ == "__main__":
 		
 	train = pd.read_csv(train_fh, sep='\t')
 	train_sp = train[train.Class=='SP'] #Used to call on vH-train.py
-	to_predict = [seq for seq in data['Sequence (first 50 N-terminal residues)']]
+	to_predict = [seq for seq in train['Sequence (first 50 N-terminal residues)']] #sequences without any filtering
 	
 	#Running workflow (vh-train)
 	train_seq_list = tra.cleavage_seq(train_sp)  #obtaining sequence list
 	sequence_length = len(train_seq_list[0])
 	one_hot_sequences= [tra.encode_seq(sequence, env.alphabet) for sequence in train_seq_list] #one hot encoding
-	pspm = tra.SPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
+	pspm = tra.PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
 	pswm = tra.PSWM_gen(pspm, env.aa_ratios_alphabet) #obtaining the PSWM matrix
 	
 	#Running workflow (vh-predict)
-	predict_seq(to_predict, env.alphabet)
+	predictions = predict_seq(to_predict, pswm, env.alphabet)
+	print('Predictions:'+'\n', predictions)

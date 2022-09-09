@@ -18,3 +18,6 @@ aa_ratios_alphabet = [aa_background_composition[residue]/100 for residue in alph
 castrense_seq = ['STAAQAEP', 'AVESSPIF', 'LTVALAAE', 'LSLSQSTN', 'MIGVESVR', 'SKPTRAFS']
 debug_alphabet = [residue for residue in 'ARNDCQEGHILKMFPSTWYV']
 aa_ratios_debug = [aa_background_composition[residue]/100 for residue in debug_alphabet]
+
+
+
