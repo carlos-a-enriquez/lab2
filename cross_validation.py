@@ -17,10 +17,10 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 	The function will return one updated dataframe table with corresponding vH scores for each of the k
 	training iterations. In the case of the testing examples, they will have the value 'test' assigned
 	so they can be filtered out and used later.'''
-	for fold in train['Cross-validation fold'].tolist():
+	for fold in train.loc[:,'Cross-validation fold'].unique().tolist(): #Iterate over every subset in order to assign it the rule of "testing subset"
 		#List of folds
-		train_iter = train[train['Cross-validation fold'] != fold] #Exclude the testing examples
-		train_sp = train_sp[train_sp.Class=='SP'] #Eliminating negative examples to generate the profile
+		train_iter = train[train.loc[:,'Cross-validation fold'] != fold] #Exclude the testing examples
+		train_sp = train_iter[train_iter.loc[:,'Class']=='SP'] #Eliminating negative examples to generate the profile
 		
 		#Profile generation (vH_train)
 		train_seq_list = tra.cleavage_seq(train_sp)  #obtaining sequence list
@@ -28,6 +28,20 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		one_hot_sequences= [tra.encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
 		pspm = tra.PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
 		pswm = tra.PSWM_gen(pspm, aa_ratios_alphabet) #obtaining the PSWM matrix
+		
+		#Prediction
+		to_predict = [seq for seq in train_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
+		predictions = pre.predict_seq(to_predict, pswm, alphabet)
+		
+		#Creating dataframes
+		predictions = pd.Series(predictions)
+		train_iter['scores'] = predictions
+		#print('Predictions:'+'\n', train.head())
+		train.to_csv('iteration_'+str(fold)+'_vh_training.csv')
+		
+		
+		
+	
 		
 	
 

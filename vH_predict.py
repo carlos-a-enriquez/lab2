@@ -40,7 +40,7 @@ if __name__ == "__main__":
 		
 	train = pd.read_csv(train_fh, sep='\t')
 	train_sp = train[train.Class=='SP'] #Used to call on vH-train.py
-	to_predict = [seq for seq in train['Sequence (first 50 N-terminal residues)']] #sequences without any filtering
+	
 	
 	#Running workflow (vh-train)
 	train_seq_list = tra.cleavage_seq(train_sp)  #obtaining sequence list
@@ -50,6 +50,7 @@ if __name__ == "__main__":
 	pswm = tra.PSWM_gen(pspm, env.aa_ratios_alphabet) #obtaining the PSWM matrix
 	
 	#Running workflow (vh-predict)
+	to_predict = [seq for seq in train['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
 	predictions = predict_seq(to_predict, pswm, env.alphabet)
 	
 	
