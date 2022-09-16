@@ -2,7 +2,6 @@
 
 import pandas as pd
 import sys
-import numpy as np
 #from sklearn.preprocessing import OneHotEncoder
 import environmental_variables as env
 import vH_train as tra
@@ -20,9 +19,9 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 	for fold in train.loc[:,'Cross-validation fold'].unique().tolist(): #Iterate over every subset in order to assign it the rule of "testing subset"
 		#Separating training and testing
 		train_iter = train.loc[train.loc[:,'Cross-validation fold'] != fold, :] #Exclude the testing examples
-		#test_iter = train.loc[train.loc[:,'Cross-validation fold'] == fold, :]  #dataframe of testing examples
+		test_iter = train.loc[train.loc[:,'Cross-validation fold'] == fold, :]  #dataframe of testing examples
 		train_iter.reset_index(drop=True, inplace=True) #Reset indices
-		#test_iter.reset_index(drop=True, inplace=True) #Reset indices
+		test_iter.reset_index(drop=True, inplace=True) #Reset indices
 		
 		#Profile generation (vH_train)
 		train_sp = train_iter.loc[train_iter.loc[:,'Class']=='SP', :] #Eliminating negative examples to generate the profile
@@ -32,15 +31,25 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		pspm = tra.PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
 		pswm = tra.PSWM_gen(pspm, aa_ratios_alphabet) #obtaining the PSWM matrix
 		
-		#Prediction
-		to_predict = [seq for seq in train_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
-		predictions = pre.predict_seq(to_predict, pswm, alphabet)
+		#Prediction on training
+		train_predict = [seq for seq in train_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
+		train_predictions = pre.predict_seq(train_predict, pswm, alphabet)
+		
+		#Prediction on testing
+		test_predict = [seq for seq in test_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
+		test_predictions = pre.predict_seq(test_predict, pswm, alphabet)
 		
 		
-		#Creating dataframes
-		predictions = pd.Series(predictions)
-		train_iter.loc[:,'scores'] = predictions
+		#Creating train dataframe
+		train_predictions = pd.Series(train_predictions[:])
+		train_iter.loc[:,'scores'] = train_predictions
 		train_iter.to_csv('iteration_'+str(fold)+'_vh_training.csv')
+		
+		#Creating test dataframe
+		test_predictions = pd.Series(test_predictions[:])
+		test_iter.loc[:,'scores'] = test_predictions
+		test_iter.to_csv('iteration_'+str(fold)+'_vh_testing.csv')
+		
 		
 		
 		
