@@ -8,6 +8,25 @@ import vH_train as tra
 import vH_predict as pre
 
 
+def PSWM_gen_folds(train_iter, alphabet, aa_ratios_alphabet):
+	'''
+	This function is meant to automatize the procedure that can be carried out 
+	by executing diverse functions from vh_train, hence streamlining the generation of an SP profile into a single step.
+	A pswm matrix is generated from a dataframe of examples as input.
+	Requirement: vH_train
+	 '''
+	#Profile generation (vH_train)
+	train_sp = train_iter.loc[train_iter.loc[:,'Class']=='SP', :] #Eliminating negative examples to generate the profile
+	train_seq_list = tra.cleavage_seq(train_sp)  #obtaining sequence list
+	sequence_length = len(train_seq_list[0])
+	one_hot_sequences= [tra.encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
+	pspm = tra.PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
+	pswm = tra.PSWM_gen(pspm, aa_ratios_alphabet) #obtaining the PSWM matrix
+	
+	return pswm
+	 
+
+
 
 def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 	''''This function takes a dataframe of examples as input. The table should contain 
@@ -24,12 +43,7 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		test_iter.reset_index(drop=True, inplace=True) #Reset indices
 		
 		#Profile generation (vH_train)
-		train_sp = train_iter.loc[train_iter.loc[:,'Class']=='SP', :] #Eliminating negative examples to generate the profile
-		train_seq_list = tra.cleavage_seq(train_sp)  #obtaining sequence list
-		sequence_length = len(train_seq_list[0])
-		one_hot_sequences= [tra.encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
-		pspm = tra.PSPM_gen(one_hot_sequences, sequence_length) #Generating the PSPM matrix
-		pswm = tra.PSWM_gen(pspm, aa_ratios_alphabet) #obtaining the PSWM matrix
+		pswm = PSWM_gen_folds(train_iter, alphabet, aa_ratios_alphabet)
 		
 		#Prediction on training
 		train_predict = [seq for seq in train_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
@@ -52,7 +66,7 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		
 		
 		
-		
+
 	
 		
 	
