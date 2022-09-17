@@ -1,11 +1,20 @@
 #! /usr/bin/env python
 
 import pandas as pd
-import sys
+import sys, os
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sn
 #from sklearn.preprocessing import OneHotEncoder
 import environmental_variables as env
 import vH_train as tra
 import vH_predict as pre
+
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import confusion_matrix
+from confusion_matrix.cf_matrix import make_confusion_matrix
+
 
 
 def PSWM_gen_folds(train_iter, alphabet, aa_ratios_alphabet):
@@ -67,7 +76,77 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		
 		
 
-	
+def threshold_statistics(n_folds):
+	'''
+	The number of nfolds must be specified. It is assumed that the function will have the csv files
+	will have the following format:
+	'iteration_'+str(fold)+'_vh_training.csv'
+	'iteration_'+str(fold)+'_vh_testing.csv'
+	The input dataframes must also follow a specific format
+	'''
+	threshold_list = []
+	for fold in range(n_folds):
+		#Loading training data
+		df_train = pd.read_csv('iteration_%d_vh_training.csv'%(fold))
+		y_score = df_train.loc[:,'scores'].to_list()
+		
+		#binary representation of the true (observed) class for each training example: 0=NO_SP, 1=SP
+		y_true = [int(val == 'SP') for val in df_train.loc[:,'Class'].tolist()]
+		
+		#Image folder
+		image_folder_name = 'output_graphs/'
+		os.system('mkdir -v '+image_folder_name[:-1])
+
+		#Precision recall curve
+		precision, recall, th = precision_recall_curve(y_true, y_score)
+		roc_auc = auc(recall, precision)
+
+		plt.figure()
+		lw = 2
+		plt.plot(recall, precision, color="darkorange", lw=lw, label="Precision recall (area = %0.2f)" % roc_auc,)
+		plt.plot([1, 0], [0, 1], color="navy", lw=lw, linestyle="--")
+		plt.xlim([0.0, 1.0])
+		plt.ylim([0.0, 1.05])
+		plt.xlabel("Recall")
+		plt.ylabel("Precision")
+		plt.title("Precision-recall curve for set-%d"%(fold))
+		plt.legend(loc="lower right")
+		plt.savefig(image_folder_name+'precision_recall_curve_%d.png'%(fold), bbox_inches='tight')
+
+		#Getting the best threshold
+		fscore = (2 * precision * recall) / (precision + recall)    
+		index = np.argmax(fscore)
+		optimal_threshold = th[index]
+		threshold_list.append(optimal_threshold)       
+
+		#Extracting testing dataframe
+		df_test = pd.read_csv('iteration_%d_vh_testing.csv'%(fold))
+
+		#Extracting test set predicted scores
+		#y_test_score = df_test.loc[:,'scores'].to_list()
+
+		# classify examples in the testing set using predicted score and trained threshold
+		y_pred_test = [int(scr >= optimal_threshold) for scr in df_test.loc[:,'scores'].to_list()]
+
+		# binary representation of the true (observed) class for each testing example: 0=NO_SP, 1=SP
+		y_true_test = [int(val == 'SP') for val in df_test.loc[:,'Class'].tolist()]
+
+		#Confusion matrix generation
+		cm = confusion_matrix(y_true_test, y_pred_test)
+		labels = ['True Neg','False Pos','False Neg','True Pos']
+		categories = ['non-SP', 'SP']
+		make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set %d at trained threshold %.2f'%(fold, optimal_threshold))
+		plt.savefig(image_folder_name+'test_confusion_matrix_%d.png'%(fold))
+
+		#Score distribution plot
+		plt.figure() #ensures a clean canvas before plotting
+		sn.kdeplot(df_test.loc[:,'scores'], shade=True, hue=df_test.loc[:,'Class']).set(xlabel='Test set %d score distribution'%(fold))
+		children = plt.gca().get_children() #Extracting the plot handles in order to pass them to plt.legend
+		l = plt.axvline(optimal_threshold, 0, 1, c='r')
+		plt.legend([children[1], children[0], l], df_test.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
+		plt.savefig(image_folder_name+'test_score_dist_%d.png'%(fold))
+
+	return threshold_list
 		
 	
 
@@ -80,7 +159,10 @@ if __name__ == "__main__":
 		train_fh = input("insert the training data path   ")
 	
 	train = pd.read_csv(train_fh, sep='\t')
-	result = cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
+	#result = cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
 	#print(result) #debug
+	
+	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
+	best_threshold = threshold_statistics(n_folds)
 	
 	
