@@ -85,6 +85,12 @@ def threshold_statistics(n_folds):
 	The input dataframes must also follow a specific format
 	'''
 	threshold_list = []
+	
+	#Image folder
+	image_folder_name = 'output_graphs/'
+	if not os.path.exists(image_folder_name[:-1]):
+		os.system('mkdir -p -v '+image_folder_name[:-1])
+	
 	for fold in range(n_folds):
 		#Loading training data
 		df_train = pd.read_csv('iteration_%d_vh_training.csv'%(fold))
@@ -93,10 +99,6 @@ def threshold_statistics(n_folds):
 		#binary representation of the true (observed) class for each training example: 0=NO_SP, 1=SP
 		y_true = [int(val == 'SP') for val in df_train.loc[:,'Class'].tolist()]
 		
-		#Image folder
-		image_folder_name = 'output_graphs/'
-		os.system('mkdir -v '+image_folder_name[:-1])
-
 		#Precision recall curve
 		precision, recall, th = precision_recall_curve(y_true, y_score)
 		roc_auc = auc(recall, precision)
