@@ -76,20 +76,20 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		
 		
 
-def threshold_statistics(n_folds):
+def threshold_optimization(n_folds, image_folder_path):
 	'''
 	The number of nfolds must be specified. It is assumed that the function will have the csv files
 	will have the following format:
 	'iteration_'+str(fold)+'_vh_training.csv'
 	'iteration_'+str(fold)+'_vh_testing.csv'
-	The input dataframes must also follow a specific format
+	The input dataframes must also follow a specific format that is specified in the project documentation.
+	The output of this function is a list of the optimized thresholds obtained for each cross-validation iteration.  
 	'''
 	threshold_list = []
 	
 	#Image folder
-	image_folder_name = 'output_graphs/'
-	if not os.path.exists(image_folder_name[:-1]):
-		os.system('mkdir -p -v '+image_folder_name[:-1])
+	if not os.path.exists(image_folder_path[:-1]):
+		os.system('mkdir -p -v '+image_folder_path[:-1])
 	
 	for fold in range(n_folds):
 		#Loading training data
@@ -113,7 +113,7 @@ def threshold_statistics(n_folds):
 		plt.ylabel("Precision")
 		plt.title("Precision-recall curve for set-%d"%(fold))
 		plt.legend(loc="lower right")
-		plt.savefig(image_folder_name+'precision_recall_curve_%d.png'%(fold), bbox_inches='tight')
+		plt.savefig(image_folder_path+'precision_recall_curve_%d.png'%(fold), bbox_inches='tight')
 
 		#Getting the best threshold
 		fscore = (2 * precision * recall) / (precision + recall)    
@@ -138,7 +138,7 @@ def threshold_statistics(n_folds):
 		labels = ['True Neg','False Pos','False Neg','True Pos']
 		categories = ['non-SP', 'SP']
 		make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set %d at trained threshold %.2f'%(fold, optimal_threshold))
-		plt.savefig(image_folder_name+'test_confusion_matrix_%d.png'%(fold))
+		plt.savefig(image_folder_path+'test_confusion_matrix_%d.png'%(fold))
 
 		#Score distribution plot
 		plt.figure() #ensures a clean canvas before plotting
@@ -146,9 +146,30 @@ def threshold_statistics(n_folds):
 		children = plt.gca().get_children() #Extracting the plot handles in order to pass them to plt.legend
 		l = plt.axvline(optimal_threshold, 0, 1, c='r')
 		plt.legend([children[1], children[0], l], df_test.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
-		plt.savefig(image_folder_name+'test_score_dist_%d.png'%(fold))
+		plt.savefig(image_folder_path+'test_score_dist_%d.png'%(fold))
 
 	return threshold_list
+	
+	
+	
+def skewed_class_eval(df, optimal_threshold, cm_suffix, dist_suffix):
+	"""
+	The df is a dataframe that must follow a specific format that is specified in the project documentation.
+	In particular, the "Class" and "Scores" columns are needed.
+	
+	The optimal_threshold is a predefined threshold that will be used to classifiy examples according to their score. 
+	The threshold could be predefined or selected according to a precious training procedure 
+	(see the threshold optimization function).
+	
+	The cm_suffix will be added to the predefined confusion matrix image name:
+	'test_confusion_matrix_%s.png'%(cm_suffix)
+	
+	The cm_suffix will be added to the predefined score distribution plot image name:
+	'test_score_dist_%s.png'%(dist_suffix)
+	
+	This function has no output, but it produces images that are added to the image folder path: 'output_graphs/'
+	
+	"""
 		
 	
 
@@ -157,14 +178,19 @@ if __name__ == "__main__":
 	#Opening the input examples file
 	try:
 		train_fh = sys.argv[1]
+		image_folder_path = sys.argv[2]
 	except:
 		train_fh = input("insert the training data path   ")
+		image_folder_path = input("insert the output image folder path  ")
+		
+		
+	
 	
 	train = pd.read_csv(train_fh, sep='\t')
 	#result = cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
 	#print(result) #debug
 	
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
-	best_threshold = threshold_statistics(n_folds)
+	best_thresholds = threshold_optimization(n_folds, image_folder_path)
 	
 	
