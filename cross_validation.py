@@ -73,8 +73,55 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		test_iter.loc[:,'scores'] = test_predictions
 		test_iter.to_csv('iteration_'+str(fold)+'_vh_testing.csv')
 		
+
+
+def skewed_class_eval(df, optimal_threshold, image_folder_path, cm_suffix, dist_suffix):
+	"""
+	The df is a dataframe that must follow a specific format that is specified in the project documentation.
+	In particular, the "Class" and "Scores" columns are needed.
+	
+	The optimal_threshold is a predefined threshold that will be used to classifiy examples according to their score. 
+	The threshold could be predefined or selected according to a precious training procedure 
+	(see the threshold optimization function).
+	
+	The cm_suffix will be added to the predefined confusion matrix image name:
+	'test_confusion_matrix_%s.png'%(cm_suffix)
+	
+	The cm_suffix will be added to the predefined score distribution plot image name:
+	'test_score_dist_%s.png'%(dist_suffix)
+	
+	This function has no output, but it produces images that are added to the image_folder_path.
+	
+	"""
+	#Image folder
+	if not os.path.exists(image_folder_path[:-1]):
+		os.system('mkdir -p -v '+image_folder_path[:-1])	
+	
+	#Extracting test set predicted scores
+	#y_test_score = df.loc[:,'scores'].to_list()
+
+	# classify examples in the testing set using predicted score and trained threshold
+	y_pred_test = [int(scr >= optimal_threshold) for scr in df.loc[:,'scores'].to_list()]
+
+	# binary representation of the true (observed) class for each testing example: 0=NO_SP, 1=SP
+	y_true_test = [int(val == 'SP') for val in df.loc[:,'Class'].tolist()]
+
+	#Confusion matrix generation
+	cm = confusion_matrix(y_true_test, y_pred_test)
+	labels = ['True Neg','False Pos','False Neg','True Pos']
+	categories = ['non-SP', 'SP']
+	make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set %s at trained threshold %.2f'%(cm_suffix, optimal_threshold))
+	plt.savefig(image_folder_path+'test_confusion_matrix_%s.png'%(cm_suffix))
+
+	#Score distribution plot
+	plt.figure() #ensures a clean canvas before plotting
+	sn.kdeplot(df.loc[:,'scores'], shade=True, hue=df.loc[:,'Class']).set(xlabel='Test set %s score distribution'%(dist_suffix))
+	children = plt.gca().get_children() #Extracting the plot handles in order to pass them to plt.legend
+	l = plt.axvline(optimal_threshold, 0, 1, c='r')
+	plt.legend([children[1], children[0], l], df.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
+	plt.savefig(image_folder_path+'test_score_dist_%s.png'%(dist_suffix))		
 		
-		
+
 
 def threshold_optimization(n_folds, image_folder_path):
 	'''
@@ -84,8 +131,10 @@ def threshold_optimization(n_folds, image_folder_path):
 	'iteration_'+str(fold)+'_vh_testing.csv'
 	The input dataframes must also follow a specific format that is specified in the project documentation.
 	The output of this function is a list of the optimized thresholds obtained for each cross-validation iteration.  
+	
+	Dependencies: Depends on the skewed_class_eval() function.
 	'''
-	threshold_list = []
+	threshold_list = [] #Threshold list to be used for downstream benchmark analysis
 	
 	#Image folder
 	if not os.path.exists(image_folder_path[:-1]):
@@ -124,65 +173,31 @@ def threshold_optimization(n_folds, image_folder_path):
 		#Extracting testing dataframe
 		df_test = pd.read_csv('iteration_%d_vh_testing.csv'%(fold))
 
-		#Extracting test set predicted scores
-		#y_test_score = df_test.loc[:,'scores'].to_list()
-
-		# classify examples in the testing set using predicted score and trained threshold
-		y_pred_test = [int(scr >= optimal_threshold) for scr in df_test.loc[:,'scores'].to_list()]
-
-		# binary representation of the true (observed) class for each testing example: 0=NO_SP, 1=SP
-		y_true_test = [int(val == 'SP') for val in df_test.loc[:,'Class'].tolist()]
-
-		#Confusion matrix generation
-		cm = confusion_matrix(y_true_test, y_pred_test)
-		labels = ['True Neg','False Pos','False Neg','True Pos']
-		categories = ['non-SP', 'SP']
-		make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set %d at trained threshold %.2f'%(fold, optimal_threshold))
-		plt.savefig(image_folder_path+'test_confusion_matrix_%d.png'%(fold))
-
-		#Score distribution plot
-		plt.figure() #ensures a clean canvas before plotting
-		sn.kdeplot(df_test.loc[:,'scores'], shade=True, hue=df_test.loc[:,'Class']).set(xlabel='Test set %d score distribution'%(fold))
-		children = plt.gca().get_children() #Extracting the plot handles in order to pass them to plt.legend
-		l = plt.axvline(optimal_threshold, 0, 1, c='r')
-		plt.legend([children[1], children[0], l], df_test.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
-		plt.savefig(image_folder_path+'test_score_dist_%d.png'%(fold))
+		#Doing skewed class evaluation on this test set iteration (df_test)
+		skewed_class_eval(df_test, optimal_threshold, image_folder_path, str(fold), str(fold))
+		
 
 	return threshold_list
 	
 	
 	
-def skewed_class_eval(df, optimal_threshold, cm_suffix, dist_suffix):
-	"""
-	The df is a dataframe that must follow a specific format that is specified in the project documentation.
-	In particular, the "Class" and "Scores" columns are needed.
-	
-	The optimal_threshold is a predefined threshold that will be used to classifiy examples according to their score. 
-	The threshold could be predefined or selected according to a precious training procedure 
-	(see the threshold optimization function).
-	
-	The cm_suffix will be added to the predefined confusion matrix image name:
-	'test_confusion_matrix_%s.png'%(cm_suffix)
-	
-	The cm_suffix will be added to the predefined score distribution plot image name:
-	'test_score_dist_%s.png'%(dist_suffix)
-	
-	This function has no output, but it produces images that are added to the image folder path: 'output_graphs/'
-	
-	"""
+
+
 		
 	
 
 
 if __name__ == "__main__":
-	#Opening the input examples file
+	#Opening the input examples file and defining the output image folder path
 	try:
 		train_fh = sys.argv[1]
 		image_folder_path = sys.argv[2]
 	except:
 		train_fh = input("insert the training data path   ")
 		image_folder_path = input("insert the output image folder path  ")
-		
+	
+	if image_folder_path[-1] != "/":
+		image_folder_path += "/"		
 		
 	
 	
