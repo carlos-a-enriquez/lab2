@@ -110,8 +110,8 @@ def skewed_class_eval(df, optimal_threshold, image_folder_path, cm_suffix, dist_
 	cm = confusion_matrix(y_true_test, y_pred_test)
 	labels = ['True Neg','False Pos','False Neg','True Pos']
 	categories = ['non-SP', 'SP']
-	make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set %s at trained threshold %.2f'%(cm_suffix, optimal_threshold))
-	plt.savefig(image_folder_path+'test_confusion_matrix_%s.png'%(cm_suffix))
+	make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set %s at trained threshold %0.2f'%(cm_suffix, optimal_threshold), sum_stats=True)
+	plt.savefig(image_folder_path+'test_confusion_matrix_%s.png'%(cm_suffix), bbox_inches='tight')
 
 	#Score distribution plot
 	plt.figure() #ensures a clean canvas before plotting
@@ -119,7 +119,7 @@ def skewed_class_eval(df, optimal_threshold, image_folder_path, cm_suffix, dist_
 	children = plt.gca().get_children() #Extracting the plot handles in order to pass them to plt.legend
 	l = plt.axvline(optimal_threshold, 0, 1, c='r')
 	plt.legend([children[1], children[0], l], df.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
-	plt.savefig(image_folder_path+'test_score_dist_%s.png'%(dist_suffix))		
+	plt.savefig(image_folder_path+'test_score_dist_%s.png'%(dist_suffix), bbox_inches='tight')		
 		
 
 
