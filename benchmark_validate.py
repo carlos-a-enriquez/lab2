@@ -64,7 +64,7 @@ def benchmark_eval(best_thresholds, image_folder_path):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
 	#Extracting the benchmark dataframe
-	bench = pd.read_csv('benchmark_set_scores.csv', sep='\t')
+	bench = pd.read_csv('benchmark_set_scores.csv')
 	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
