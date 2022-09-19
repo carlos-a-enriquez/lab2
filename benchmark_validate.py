@@ -51,6 +51,8 @@ if __name__ == "__main__":
 	if cross_validate.lower()[0] == "y":
 		print("Repeating cross-validation procedure")
 		cr.cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
+	else:
+		print("The cross-validation procedure was skipped")
 		
 		
 	#Finding the best threshold from the cross-validation score results
