@@ -47,25 +47,31 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
 	
 	
 	
-def benchmark_eval(best_threshold):
+def benchmark_eval(best_thresholds, image_folder_path):
 	"""
 	This function will load the file 'benchmark_set_scores.csv' and it will use the column
 	'Class' to obtain y_true and the column 'scores' to obtain y_pred. Then, a classification
 	accuracy procedure will be carried out.
 	
-	best_threshold = Final training threshold obtained from the cross validation procedure. 
+	best_thresholds = Final list of training thresholds obtained from the cross validation procedure. 
 	
 	Requirements:
 	- skewed_class_eval() function from the cross_validation module. 
 	"""
+	#Folder creation
+	image_folder_path = image_folder_path + 'benchmark/'
+	if not os.path.exists(image_folder_path[:-1]):
+		os.system('mkdir -p -v '+image_folder_path[:-1])	
+	
 	#Extracting the benchmark dataframe
 	bench = pd.read_csv('benchmark_set_scores.csv', sep='\t')
 	
-	# classify examples in the benchmark set using the predicted score and trained threshold
-	y_pred = [int(scr >= best_threshold) for scr in bench.loc[:,'scores'].to_list()]
+	#Finding the best threshold
+	best_thresholds = np.array(best_thresholds[:])
+	optimal_threshold = np.average(best_thresholds)	
 	
-	# binary representation of the true (observed) class for each testing example: 0=NO_SP, 1=SP
-	y_true = [int(val == 'SP') for val in bench.loc[:,'Class'].tolist()
+	#Doing the skewed class analysis based on the threshold
+	cr.skewed_class_eval(bench, optimal_threshold, image_folder_path, 'bench', 'bench')
 	
 	
 	
@@ -106,10 +112,11 @@ if __name__ == "__main__":
 		print("The cross-validation procedure was skipped")
 		
 		
-	#Finding the best threshold from the cross-validation score results
+	#Finding the best thresholds from the cross-validation score results
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
 	best_thresholds = cr.threshold_optimization(n_folds, image_folder_path)
 	
 	#Threshold evaluation on benchmark
 	benchmark_scores(train, bench, env.alphabet, env.aa_ratios_alphabet)
+	benchmark_eval(best_thresholds, image_folder_path)
 	
