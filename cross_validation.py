@@ -17,7 +17,7 @@ from confusion_matrix.cf_matrix import make_confusion_matrix
 
 
 
-def PSWM_gen_folds(train_iter, alphabet, aa_ratios_alphabet):
+def PSWM_gen_folds(train, alphabet, aa_ratios_alphabet):
 	'''
 	This function is meant to automatize the procedure that can be carried out 
 	by executing diverse functions from vh_train, hence streamlining the generation of an SP profile into a single step.
@@ -25,7 +25,7 @@ def PSWM_gen_folds(train_iter, alphabet, aa_ratios_alphabet):
 	Requirement: vH_train
 	 '''
 	#Profile generation (vH_train)
-	train_sp = train_iter.loc[train_iter.loc[:,'Class']=='SP', :] #Eliminating negative examples to generate the profile
+	train_sp = train.loc[train.loc[:,'Class']=='SP', :] #Eliminating negative examples to generate the profile
 	train_seq_list = tra.cleavage_seq(train_sp)  #obtaining sequence list
 	sequence_length = len(train_seq_list[0])
 	one_hot_sequences= [tra.encode_seq(sequence, alphabet) for sequence in train_seq_list] #one hot encoding
