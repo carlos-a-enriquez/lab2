@@ -2,3 +2,4 @@ directory.txt
 iteration*.csv
 *.png
 *.tiff
+benchmark_set_scores.csv
