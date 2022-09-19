@@ -200,11 +200,12 @@ if __name__ == "__main__":
 		image_folder_path += "/"		
 		
 	
-	
+	#Generating the scores for cross_validation
 	train = pd.read_csv(train_fh, sep='\t')
-	#result = cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
+	cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
 	#print(result) #debug
 	
+	#Implementing the cross-validation
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
 	best_thresholds = threshold_optimization(n_folds, image_folder_path)
 	
