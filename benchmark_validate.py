@@ -75,7 +75,9 @@ def benchmark_eval(best_thresholds, image_folder_path):
 	optimal_threshold = np.average(best_thresholds)	
 	
 	#Doing the skewed class analysis based on the threshold
-	cr.skewed_class_eval(bench_scores, optimal_threshold, image_folder_path, 'bench', 'bench')
+	cm = cr.confusion_matrix_generator(bench_scores, optimal_threshold)
+	cr.graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, 'bench')
+	cr.graphics_density_distribution(bench_scores, optimal_threshold, image_folder_path, 'bench')
 	
 	
 	
@@ -110,10 +112,10 @@ if __name__ == "__main__":
 	
 	#Generating the scores for cross_validation
 	if cross_validate.lower()[0] == "y":
-		print("Repeating cross-validation procedure")
+		print("Repeating cross-validation data frame generation")
 		cr.cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
 	else:
-		print("The cross-validation procedure was skipped")
+		print("The cross-validation data frame (with scores) generation procedure was skipped")
 		
 		
 	#Finding the best thresholds from the cross-validation score results
