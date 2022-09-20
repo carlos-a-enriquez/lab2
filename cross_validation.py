@@ -77,19 +77,16 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		
 
 
-def skewed_class_eval(df, optimal_threshold, image_folder_path, cm_suffix, dist_suffix):
+def graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, cm_suffix):
 	"""
-	The df is a dataframe that must follow a specific format that is specified in the project documentation.
-	In particular, the "Class" and "Scores" columns are needed.
-	
-	The optimal_threshold is a predefined threshold that will be used to classifiy examples according to their score. 
-	The threshold could be predefined or selected according to a precious training procedure 
-	(see the threshold optimization function).
+	The purpose of this function is to create confusion matrix images. 
+	This function is meant to receive a numpy array of shape (2,2) that 
+	represents the confusion matrix of a binary classification problem. 
 	
 	The cm_suffix will be added to the predefined confusion matrix image name:
 	'test_confusion_matrix_%s.png'%(cm_suffix)
 	
-	The cm_suffix will be added to the predefined score distribution plot image name:
+	The dist_suffix will be added to the predefined score distribution plot image name:
 	'test_score_dist_%s.png'%(dist_suffix)
 	
 	This function has no output, but it produces images that are added to the image_folder_path.
@@ -99,22 +96,30 @@ def skewed_class_eval(df, optimal_threshold, image_folder_path, cm_suffix, dist_
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
-	#Extracting test set predicted scores
-	#y_test_score = df.loc[:,'scores'].to_list()
-
-	# classify examples in the testing set using predicted score and trained threshold
-	y_pred_test = [int(scr >= optimal_threshold) for scr in df.loc[:,'scores'].to_list()]
-
-	# binary representation of the true (observed) class for each testing example: 0=NO_SP, 1=SP
-	y_true_test = [int(val == 'SP') for val in df.loc[:,'Class'].tolist()]
-
 	#Confusion matrix generation
-	cm = confusion_matrix(y_true_test, y_pred_test)
 	labels = ['True Neg','False Pos','False Neg','True Pos']
 	categories = ['non-SP', 'SP']
 	make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set "%s" at trained threshold %0.2f'%(cm_suffix, optimal_threshold), sum_stats=True)
 	plt.savefig(image_folder_path+'test_confusion_matrix_%s.png'%(cm_suffix), bbox_inches='tight')
+	
 
+		
+def graphics_density_distribution(df, optimal_threshold, image_folder_path, dist_suffix):
+	"""
+	The purpose of this function is to create density distribution images. 
+	The images represent the distribution of scores according to true classification
+	and include a threshold value as a vertical line.
+		
+	The dist_suffix will be added to the predefined score distribution plot image name:
+	'test_score_dist_%s.png'%(dist_suffix)
+	
+	This function has no output, but it produces images that are added to the image_folder_path.
+	
+	"""
+	#Image folder
+	if not os.path.exists(image_folder_path[:-1]):
+		os.system('mkdir -p -v '+image_folder_path[:-1])	
+	
 	#Score distribution plot
 	plt.figure() #ensures a clean canvas before plotting
 	sn.kdeplot(df.loc[:,'scores'], shade=True, hue=df.loc[:,'Class']).set(xlabel='Test set "%s" score distribution'%(dist_suffix))
@@ -122,7 +127,31 @@ def skewed_class_eval(df, optimal_threshold, image_folder_path, cm_suffix, dist_
 	l = plt.axvline(optimal_threshold, 0, 1, c='r')
 	plt.legend([children[1], children[0], l], df.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
 	plt.savefig(image_folder_path+'test_score_dist_%s.png'%(dist_suffix), bbox_inches='tight')		
-		
+	
+
+def confusion_matrix_generator(df, optimal_threshold):
+	"""
+	This function produces the confusion matrix based on a dataframe of examples (with scores and true Classes) 
+	and a predefined threshold.
+	
+	The df is a dataframe that must follow a specific format that is specified in the project documentation.
+	In particular, the "Class" and "Scores" columns are needed.
+	
+	The optimal_threshold is a predefined threshold that will be used to classifiy examples according to their score. 
+	The threshold could be predefined or selected according to a precious training procedure 
+	(see the threshold optimization function).
+	"""
+	# classify examples in the testing set using predicted score and trained threshold
+	y_pred_test = [int(scr >= optimal_threshold) for scr in df.loc[:,'scores'].to_list()]
+
+	# binary representation of the true (observed) class for each testing example: 0=NO_SP, 1=SP
+	y_true_test = [int(val == 'SP') for val in df.loc[:,'Class'].tolist()]
+
+	#Confusion matrix generation
+	return confusion_matrix(y_true_test, y_pred_test)
+	
+
+
 
 
 def threshold_optimization(n_folds, image_folder_path):
@@ -134,9 +163,10 @@ def threshold_optimization(n_folds, image_folder_path):
 	The input dataframes must also follow a specific format that is specified in the project documentation.
 	The output of this function is a list of the optimized thresholds obtained for each cross-validation iteration.  
 	
-	Dependencies: Depends on the skewed_class_eval() function.
+	Dependencies: Depends on the confusion_matrix_generator() function.
 	'''
 	threshold_list = [] #Threshold list to be used for downstream benchmark analysis
+	cm_list = [] #Confusion matrix list to be used for downstream analysis
 	
 	#Image folder
 	if not os.path.exists(image_folder_path[:-1]):
@@ -176,7 +206,10 @@ def threshold_optimization(n_folds, image_folder_path):
 		df_test = pd.read_csv('iteration_%d_vh_testing.csv'%(fold))
 
 		#Doing skewed class evaluation on this test set iteration (df_test)
-		skewed_class_eval(df_test, optimal_threshold, image_folder_path, str(fold), str(fold))
+		cm = confusion_matrix_generator(df_test, optimal_threshold)
+		cm_list.append(cm) #Appending cm to list
+		graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, str(fold))
+		graphics_density_distribution(df_test, optimal_threshold, image_folder_path, str(fold))
 		
 
 	return threshold_list
