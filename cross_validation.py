@@ -96,10 +96,14 @@ def graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, cm_suffi
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
+	#Changing the threshold into a string
+	if isinstance(optimal_threshold, float):
+		optimal_threshold = str(round(optimal_threshold, 2))
+		
 	#Confusion matrix generation
 	labels = ['True Neg','False Pos','False Neg','True Pos']
 	categories = ['non-SP', 'SP']
-	make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set "%s" at trained threshold %0.2f'%(cm_suffix, optimal_threshold), sum_stats=True)
+	make_confusion_matrix(cm, group_names=labels, categories=categories, cmap='binary', title='Test set "%s" at trained threshold %s'%(cm_suffix, optimal_threshold), sum_stats=True)
 	plt.savefig(image_folder_path+'test_confusion_matrix_%s.png'%(cm_suffix), bbox_inches='tight')
 	
 
@@ -160,7 +164,7 @@ def average_confusion_matrix(cm_list):
 	total = len(cm_list)
 	if total < 1:
 		return 'error'
-	added_cm = np.zeros(2,2)
+	added_cm = np.zeros((2,2))
 	for cm in cm_list:
 		added_cm += cm
 	return added_cm/total
@@ -227,8 +231,8 @@ def threshold_optimization(n_folds, image_folder_path):
 		graphics_density_distribution(df_test, optimal_threshold, image_folder_path, str(fold))
 		
 	#Obtaining the average cm and printing it
-	average_confusion_matrix(cm_list)
-	
+	avg_cm = average_confusion_matrix(cm_list)
+	graphics_confusion_matrix(avg_cm, 'NaN', image_folder_path, 'average')
 	
 	return threshold_list
 	
