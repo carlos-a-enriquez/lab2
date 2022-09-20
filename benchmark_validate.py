@@ -1,20 +1,23 @@
 #! /usr/bin/env python
 
-import pandas as pd
 import sys, os
+import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sn
+#import matplotlib.pyplot as plt
+#import seaborn as sn
 #from sklearn.preprocessing import OneHotEncoder
+
+#from sklearn.metrics import precision_recall_curve
+#from sklearn.metrics import roc_curve, auc
+#from sklearn.metrics import confusion_matrix
+#from confusion_matrix.cf_matrix import make_confusion_matrix
+
 import environmental_variables as env
-import vH_train as tra
+#import vH_train as tra
 import vH_predict as pre
 import cross_validation as cr
 
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import confusion_matrix
-from confusion_matrix.cf_matrix import make_confusion_matrix
+
 
 
 def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
@@ -29,7 +32,8 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
 	
 	alphabet= Order of amino acid residues to be used for matrix generation
 	
-	aa_ratios_alphabet = List of background amino acid ratio composition (Swissprot). Should be in the same order as "alphabet".
+	aa_ratios_alphabet = List of background amino acid ratio composition (Swissprot). 
+	Should be in the same order as "alphabet".
 	
 	Requirements: The function PSWM_gen_folds() from cross_validate. 
 	"""
@@ -37,7 +41,7 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
 	pswm = cr.PSWM_gen_folds(train, alphabet, aa_ratios_alphabet) #PSWM for the entire training dataset
 	
 	#Predict on benchmark sequences
-	bench_predict = [seq for seq in bench['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
+	bench_predict = list(bench['Sequence (first 50 N-terminal residues)']) #Positive and negative examples included. Also, the full 50 aa sequence is used. 
 	bench_predictions = pre.predict_seq(bench_predict, pswm, alphabet)
 	
 	#Generating benchmark score dataframe
@@ -64,14 +68,14 @@ def benchmark_eval(best_thresholds, image_folder_path):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
 	#Extracting the benchmark dataframe
-	bench = pd.read_csv('benchmark_set_scores.csv')
+	bench_scores = pd.read_csv('benchmark_set_scores.csv')
 	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
 	optimal_threshold = np.average(best_thresholds)	
 	
 	#Doing the skewed class analysis based on the threshold
-	cr.skewed_class_eval(bench, optimal_threshold, image_folder_path, 'bench', 'bench')
+	cr.skewed_class_eval(bench_scores, optimal_threshold, image_folder_path, 'bench', 'bench')
 	
 	
 	
@@ -91,7 +95,7 @@ if __name__ == "__main__":
 		bench_fh = sys.argv[3]
 		cross_validate= sys.argv[4] #Write yes to specifiy that the cross_validation_init code must be executed again
 		
-	except:
+	except IndexError:
 		train_fh = input("insert the training data path   ")
 		image_folder_path = input("insert the output image folder path  ")
 		bench_fh = input("insert the benchmark data paths  ")

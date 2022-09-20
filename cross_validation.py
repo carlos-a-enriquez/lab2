@@ -1,19 +1,21 @@
 #! /usr/bin/env python
 
-import pandas as pd
 import sys, os
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sn
 #from sklearn.preprocessing import OneHotEncoder
+
+from sklearn.metrics import precision_recall_curve
+#from sklearn.metrics import roc_curve
+from sklearn.metrics import auc
+from sklearn.metrics import confusion_matrix
+from confusion_matrix.cf_matrix import make_confusion_matrix
+
 import environmental_variables as env
 import vH_train as tra
 import vH_predict as pre
-
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import confusion_matrix
-from confusion_matrix.cf_matrix import make_confusion_matrix
 
 
 
@@ -55,11 +57,11 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		pswm = PSWM_gen_folds(train_iter, alphabet, aa_ratios_alphabet)
 		
 		#Prediction on training
-		train_predict = [seq for seq in train_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
+		train_predict = list(train_iter['Sequence (first 50 N-terminal residues)']) #Positive and negative examples included. Also, the full 50 aa sequence is used. 
 		train_predictions = pre.predict_seq(train_predict, pswm, alphabet)
 		
 		#Prediction on testing
-		test_predict = [seq for seq in test_iter['Sequence (first 50 N-terminal residues)']] #Positive and negative examples included. Also, the full 50 aa sequence is used. 
+		test_predict = list(test_iter['Sequence (first 50 N-terminal residues)']) #Positive and negative examples included. Also, the full 50 aa sequence is used. 
 		test_predictions = pre.predict_seq(test_predict, pswm, alphabet)
 		
 		
@@ -192,7 +194,7 @@ if __name__ == "__main__":
 	try:
 		train_fh = sys.argv[1]
 		image_folder_path = sys.argv[2]
-	except:
+	except IndexError:
 		train_fh = input("insert the training data path   ")
 		image_folder_path = input("insert the output image folder path  ")
 	
