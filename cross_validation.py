@@ -151,7 +151,20 @@ def confusion_matrix_generator(df, optimal_threshold):
 	return confusion_matrix(y_true_test, y_pred_test)
 	
 
-
+def average_confusion_matrix(cm_list):
+	"""
+	Generates the average confusion matrix based on a list of confusion matrices.
+	
+	cm_list: A list (2,2) numpy arrays expected.
+	"""
+	total = len(cm_list)
+	if total < 1:
+		return 'error'
+	added_cm = np.zeros(2,2)
+	for cm in cm_list:
+		added_cm += cm
+	return added_cm/total
+		
 
 
 def threshold_optimization(n_folds, image_folder_path):
@@ -163,7 +176,8 @@ def threshold_optimization(n_folds, image_folder_path):
 	The input dataframes must also follow a specific format that is specified in the project documentation.
 	The output of this function is a list of the optimized thresholds obtained for each cross-validation iteration.  
 	
-	Dependencies: Depends on the confusion_matrix_generator() function.
+	Dependencies: Depends on the confusion_matrix_generator(), graphics_confusion_matrix() and
+	graphics_density_distribution() functions.
 	'''
 	threshold_list = [] #Threshold list to be used for downstream benchmark analysis
 	cm_list = [] #Confusion matrix list to be used for downstream analysis
@@ -172,6 +186,7 @@ def threshold_optimization(n_folds, image_folder_path):
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])
 	
+	#Obtaining the thresholds for each cross-validation iteration
 	for fold in range(n_folds):
 		#Loading training data
 		df_train = pd.read_csv('iteration_%d_vh_training.csv'%(fold))
@@ -211,7 +226,10 @@ def threshold_optimization(n_folds, image_folder_path):
 		graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, str(fold))
 		graphics_density_distribution(df_test, optimal_threshold, image_folder_path, str(fold))
 		
-
+	#Obtaining the average cm and printing it
+	average_confusion_matrix(cm_list)
+	
+	
 	return threshold_list
 	
 	
