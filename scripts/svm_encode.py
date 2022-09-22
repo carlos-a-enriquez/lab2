@@ -63,7 +63,7 @@ def encode_sequences(sequences, k, alphabet):
 		encoded_seqs[i,:] = residue_comp_vector
 		
 		#Debug
-		print(seq[0:k])
+		#print(seq[0:k])
 	
 	return encoded_seqs
 		
@@ -84,12 +84,12 @@ if __name__ == "__main__":
 		
 	#Encoding workflow
 	sequences = extract_sequences(train_fh)
-	#encode = encode_sequences(sequences, 24, env.alphabet)
-	#print(encode)
+	encode = encode_sequences(sequences, 24, env.alphabet)
+	print(encode)
 	
 	
 	#Debugging
-	debug = True
+	debug = False
 	if debug:
 		test = sequences[0:1]
 		print("\nThe testing composition is: \n%s"%str(encode_sequences(test, 24, env.alphabet)))
