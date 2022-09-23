@@ -78,7 +78,7 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		train_iter_Y = Y[train_indeces]
 		
 		#Define the model
-		mySVC = svm.SVC(C=hyper_param_dict['C'], kernel=‘rbf’, gamma=hyper_param_dict['Gamma'])
+		mySVC = svm.SVC(C=hyper_param_dict['C'], kernel='rbf', gamma=hyper_param_dict['Gamma'])
 		
 		#Train the model
 		mySVC.fit(train_iter_X, train_iter_Y)
@@ -117,7 +117,7 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 	
 	#iterating over all hyperparameter combinations
 	for comb in hyper_param:
-		hyper_param_dict = dict("K"=comb[0], "C" = comb[1], "Gamma" = comb[2])
+		hyper_param_dict = dict(K=comb[0], C = comb[1], Gamma = comb[2])
 		cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict)
 		
 		
