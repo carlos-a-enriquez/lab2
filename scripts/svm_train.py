@@ -4,13 +4,13 @@ import sys, os
 import pandas as pd
 import numpy as np
 from sklearn import svm
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, matthews_corrcoef
 #import matplotlib.pyplot as plt
 #import seaborn as sn
 import environmental_variables as env
 import svm_encode as enco
 from cross_validation import graphics_confusion_matrix
-from accuracy import get_mcc
+#from accuracy import get_mcc
 
 
 def extract_true_classes(training_fh):
@@ -94,8 +94,9 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		
 		#Validate
 		cm = confusion_matrix(test_iter_Y, y_pred_test)
-		graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_fold_%s"%(str(f)))
-		MCC_list.append(get_mcc(cm)) #Mathew's correlation
+		#input(cm)
+		#graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_fold_%s"%(str(f)))
+		MCC_list.append(matthews_corrcoef(test_iter_Y, y_pred_test)) #Mathew's correlation
 	
 	#List to numpy
 	MCC_list = np.array(MCC_list[:])
