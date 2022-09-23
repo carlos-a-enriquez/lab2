@@ -3,3 +3,4 @@ iteration*.csv
 *.png
 *.tiff
 benchmark_set_scores.csv
+*/__pycache__/*

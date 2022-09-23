@@ -21,3 +21,13 @@ aa_ratios_debug = [aa_background_composition[residue]/100 for residue in debug_a
 
 
 
+
+#SVM grid search hyperparameter lists
+k_list= [20, 22, 24]
+c_list = [1, 2, 4]
+gamma_list = [0.5, 1, "scale"]
+
+
+
+
+

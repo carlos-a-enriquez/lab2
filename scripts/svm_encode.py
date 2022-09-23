@@ -30,7 +30,7 @@ def encode_sequences(sequences, k, alphabet):
 	k: SP length to be used in order to extract the corresponding subsequence from
 	each training example. This is one of the model's hyperparameters.
 	
-	training_data = An array like object that contains the list of sequences to be
+	sequences = An list that contains the list of sequences to be
 	encoded. It is assumed to be the first N-terminal residues of the sequence.  
 	
 	alphabet = defines the aminoacid string alphabet and their default order. 
