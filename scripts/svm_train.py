@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sys, os
+import sys
 import pandas as pd
 import numpy as np
 from sklearn import svm
@@ -40,7 +40,7 @@ def extract_fold_info(training_fh):
 	validation folds)
 	 """
 	train = pd.read_csv(training_fh, sep='\t')
-	folds, unique_folds = (train.loc[:,'Cross-validation fold'], train.loc[:,'Cross-validation fold'].unique().tolist())
+	folds, unique_folds = (train.loc[:,'Cross-validation fold'].tolist(), train.loc[:,'Cross-validation fold'].unique().tolist())
 	return folds, unique_folds
 	
 	
