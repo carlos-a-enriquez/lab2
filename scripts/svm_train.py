@@ -44,7 +44,7 @@ def extract_fold_info(training_fh):
 	return folds, unique_folds
 	
 	
-def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict):
+def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict, comb_id):
 	"""
 	This function is meant to be called by grid_search_validate() so that it can
 	perform the cross-validation within the grid search routine. 
@@ -62,6 +62,8 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 	the number of cross validation iterations).
 	
 	hyper_param_dict = Dictionary of unique hyperparameter conditions
+	
+	comb = Combination of hyperparameter id
 	"""
 	#Converting folds into an array
 	if isinstance(folds, list):
@@ -95,7 +97,8 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		#Validate
 		cm = confusion_matrix(test_iter_Y, y_pred_test)
 		#input(cm)
-		graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_fold_%s"%(str(f)))
+		figure_id = str(comb_id)+'_fl_'+str(f)
+		graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_fold_%s"%(figure_id))
 		MCC_list.append(matthews_corrcoef(test_iter_Y, y_pred_test)) #Mathew's correlation
 	
 	#List to numpy
@@ -140,9 +143,11 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 	hyper_results = list()
 	
 	#iterating over all hyperparameter combinations
+	comb_id = 0
 	for comb in hyper_param:
+		comb_id += 1
 		hyper_param_dict = dict(K=comb[0], C = comb[1], Gamma = comb[2])
-		hyper_results.append(cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict))
+		hyper_results.append(cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict, comb_id))
 		
 	return hyper_param, hyper_results, max(hyper_results)
 		
