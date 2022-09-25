@@ -95,7 +95,7 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		#Validate
 		cm = confusion_matrix(test_iter_Y, y_pred_test)
 		#input(cm)
-		#graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_fold_%s"%(str(f)))
+		graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_fold_%s"%(str(f)))
 		MCC_list.append(matthews_corrcoef(test_iter_Y, y_pred_test)) #Mathew's correlation
 	
 	#List to numpy
