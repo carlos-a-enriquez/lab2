@@ -10,7 +10,9 @@ from sklearn.metrics import confusion_matrix, matthews_corrcoef
 import environmental_variables as env
 import svm_encode as enco
 from cross_validation import graphics_confusion_matrix
-#from accuracy import get_mcc
+import time
+
+start_time = time.time()
 
 
 def extract_true_classes(training_fh):
@@ -95,7 +97,7 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		y_pred_test = mySVC.predict(test_iter_X)
 		
 		#Validate
-		cm = confusion_matrix(test_iter_Y, y_pred_test)
+		cm = confusion_matrix(test_iter_Y, y_pred_test)		
 		#input(cm)
 		figure_id = str(comb_id)+'_fl_'+str(f)
 		graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_%s"%(figure_id))
@@ -148,8 +150,14 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 		comb_id += 1
 		hyper_param_dict = dict(K=comb[0], C = comb[1], Gamma = comb[2])
 		hyper_results.append(cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict, comb_id))
-		
-	return hyper_param, hyper_results, max(hyper_results)
+	
+	#Finding the best MCC
+	best_MCC = max(hyper_results)
+	
+	#Formatting results for printing
+	hyper_results_np = np.around(np.array(hyper_results[:]), 2)
+	
+	return hyper_param, hyper_results_np, best_MCC, hyper_results.index(best_MCC)
 		
 		
 		
@@ -175,8 +183,9 @@ if __name__ == "__main__":
 	sequences = enco.extract_sequences(train_fh)
 	train_Y = extract_true_classes(train_fh)	
 	folds, unique_folds = extract_fold_info(train_fh)
-	comb, mccs, best_mcc= grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
-	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest score: %0.2f"%(str(comb), str(mccs), best_mcc))
+	comb, mccs, best_mcc, best_mcc_index = grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
+	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest score: %0.2f\nBest Combination: %s"%(str(comb), str(mccs), best_mcc, str(comb[best_mcc_index])))
+	print("--- %0.2f seconds ---" % (time.time() - start_time))
 	
 	
 	
