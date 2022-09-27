@@ -111,14 +111,14 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		
 		#Other statistics
 		acc_list.append(accuracy_score(test_iter_Y, y_pred_test))
-		prec_list.append(precision_score(test_iter_Y, y_pred_test))
-		rec_list.append(recall_score(test_iter_Y, y_pred_test))
+		prec_list.append(precision_score(test_iter_Y, y_pred_test, zero_division=0))
+		rec_list.append(recall_score(test_iter_Y, y_pred_test, zero_division=0))
 		f1_list.append(f1_score(test_iter_Y, y_pred_test))
 		
 	
 	#List to numpy
 	MCC_list = np.array(MCC_list[:])
-	acc_list, prec_list, rec_list , f1_list = np.array(acc_list[:], prec_list[:], rec_list[:], f1_list[:])
+	acc_list, prec_list, rec_list , f1_list = np.array(acc_list[:]), np.array(prec_list[:]), np.array(rec_list[:]), np.array(f1_list[:])
 	metric_lists = MCC_list, acc_list, prec_list, rec_list , f1_list
 	
 	#Obtaining the averages and the standard error
@@ -178,7 +178,7 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 	#Formatting results for printing
 	mcc_results_np = np.around(np.array(mcc_results[:]), 2)
 	
-	return hyper_param, mcc_results_np, best_MCC, hyper_param[best_mcc_index], hyper_results[best_mcc_index]
+	return hyper_param, mcc_results_np, hyper_param[best_mcc_index], hyper_results[best_mcc_index]
 		
 		
 		
@@ -204,13 +204,13 @@ if __name__ == "__main__":
 	sequences = enco.extract_sequences(train_fh)
 	train_Y = extract_true_classes(train_fh)	
 	folds, unique_folds = extract_fold_info(train_fh)
-	comb, mccs, best_mcc, best_comb, best_metrics = grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
-	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest MCC score: %0.2f\nBest Combination: %s"%(str(comb), str(mccs), best_mcc, str(best_comb)))
-	print("\nBest MCC: %0.2f +/- %0.2f"%best_metrics['MCC'])
-	print("\nBest Accuracy: %0.2f +/- %0.2f"%best_metrics['Accuracy'])
-	print("\nBest Precision: %0.2f +/- %0.2f"%best_metrics['Precision'])
-	print("\nBest Recall: %0.2f +/- %0.2f"%best_metrics['Recall'])
-	print("\nBest F1: %0.2f +/- %0.2f"%best_metrics['F1'])
+	comb, mccs, best_comb, best_metrics = grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
+	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest Combination: %s"%(str(comb), str(mccs), str(best_comb)))
+	print("Best MCC: %0.2f +/- %0.2f"%best_metrics['MCC'])
+	print("Best Accuracy: %0.2f +/- %0.2f"%best_metrics['Accuracy'])
+	print("Best Precision: %0.2f +/- %0.2f"%best_metrics['Precision'])
+	print("Best Recall: %0.2f +/- %0.2f"%best_metrics['Recall'])
+	print("Best F1: %0.2f +/- %0.2f"%best_metrics['F1'])
 	print("--- %0.2f seconds ---" % (time.time() - start_time))
 	
 	
