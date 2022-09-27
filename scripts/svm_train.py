@@ -4,7 +4,8 @@ import sys
 import pandas as pd
 import numpy as np
 from sklearn import svm
-from sklearn.metrics import confusion_matrix, matthews_corrcoef
+from sklearn.metrics import confusion_matrix, matthews_corrcoef, precision_score \
+recall_score, f1_score, accuracy_score
 #import matplotlib.pyplot as plt
 #import seaborn as sn
 import environmental_variables as env
@@ -24,7 +25,7 @@ def extract_true_classes(training_fh):
 	 file with the 'Class' column. 
 	 
 	 Returns an array of values. 
-	"""
+	"""+
 	train = pd.read_csv(training_fh, sep='\t')
 	return np.array(list(train['Class']))
 	
@@ -49,7 +50,8 @@ def extract_fold_info(training_fh):
 def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict, comb_id):
 	"""
 	This function is meant to be called by grid_search_validate() so that it can
-	perform the cross-validation within the grid search routine. 
+	perform the cross-validation within the grid search routine. It will return 
+	a 5 dimensional vector indicating the average metric of the cross_validation routine
 	
 	sequences = An list that contains the list of sequences to be
 	encoded. It is assumed to be the first N-terminal residues of the sequence.  
@@ -74,8 +76,10 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 	#Obtaining X, the 2D array of 20-dim vectors per example
 	X = enco.encode_sequences(sequences, hyper_param_dict['K'], env.alphabet)
 	
-	#List of MCC values
-	MCC_list = list()
+	#List of evaluation values
+	MCC_list = list() #Will be used to choose the best hyperparameters
+	acc_list, prec_list, rec_list , f1_list= [], [], [], []	
+	
 	
 	#Cross validation iteration
 	for f in unique_folds:
@@ -102,11 +106,21 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 		figure_id = str(comb_id)+'_fl_'+str(f)
 		graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_%s"%(figure_id))
 		MCC_list.append(matthews_corrcoef(test_iter_Y, y_pred_test)) #Mathew's correlation
+		
+		#Other statistics
+		acc_list.append(accuracy_score(test_iter_Y, y_pred_test))
+		prec_list.append(precision_score(test_iter_Y, y_pred_test))
+		rec_list.append(recall_score(test_iter_Y, y_pred_test))
+		f1_list.append(f1_score(test_iter_Y, y_pred_test))
+		
 	
 	#List to numpy
 	MCC_list = np.array(MCC_list[:])
+	acc_list, prec_list, rec_list , f1_list = np.array(acc_list[:], prec_list[:], rec_list[:], f1_list[:])
 	
-	return np.mean(MCC_list)
+	#Obtaining the averages and the standard error
+	
+	return np.mean(MCC_list), np.mean(acc_list), np.mean(prec_list), np.mean(rec_list), np.mean(f1_list)
 		
 		
 	
