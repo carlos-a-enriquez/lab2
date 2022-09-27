@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 import numpy as np
 from sklearn import svm
-from sklearn.metrics import confusion_matrix, matthews_corrcoef, precision_score \
+from sklearn.metrics import confusion_matrix, matthews_corrcoef, precision_score, \
 recall_score, f1_score, accuracy_score
 #import matplotlib.pyplot as plt
 #import seaborn as sn
@@ -24,10 +24,11 @@ def extract_true_classes(training_fh):
 	training_fh = Assumes a filehandler that points to a .tsv
 	 file with the 'Class' column. 
 	 
-	 Returns an array of values. 
-	"""+
+	 Returns an array of the coded classes. 
+	"""
 	train = pd.read_csv(training_fh, sep='\t')
-	return np.array(list(train['Class']))
+	class_list = [int(val == 'SP') for val in list(train['Class'])]
+	return np.array(class_list)
 	
 	
 def extract_fold_info(training_fh):
@@ -51,7 +52,8 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 	"""
 	This function is meant to be called by grid_search_validate() so that it can
 	perform the cross-validation within the grid search routine. It will return 
-	a 5 dimensional vector indicating the average metric of the cross_validation routine
+	a dictionary indicating the average metrics and standard error of the 
+	cross_validation routine.
 	
 	sequences = An list that contains the list of sequences to be
 	encoded. It is assumed to be the first N-terminal residues of the sequence.  
@@ -117,10 +119,13 @@ def cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dic
 	#List to numpy
 	MCC_list = np.array(MCC_list[:])
 	acc_list, prec_list, rec_list , f1_list = np.array(acc_list[:], prec_list[:], rec_list[:], f1_list[:])
+	metric_lists = MCC_list, acc_list, prec_list, rec_list , f1_list
 	
 	#Obtaining the averages and the standard error
+	names = ['MCC', 'Accuracy', 'Precision', 'Recall', 'F1']
+	metrics = {name:(np.mean(data), (np.std(data, ddof=1) / np.sqrt(np.size(data)))) for name,data in zip(names, metric_lists)} #Obtain average, standard error pairs for each metric
 	
-	return np.mean(MCC_list), np.mean(acc_list), np.mean(prec_list), np.mean(rec_list), np.mean(f1_list)
+	return metrics
 		
 		
 	
@@ -165,13 +170,15 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 		hyper_param_dict = dict(K=comb[0], C = comb[1], Gamma = comb[2])
 		hyper_results.append(cross_validation_init_grid(sequences,Y, folds, unique_folds, hyper_param_dict, comb_id))
 	
-	#Finding the best MCC
-	best_MCC = max(hyper_results)
+	#Finding the best MCC and the best hyperparameters
+	mcc_results = [mcc_dic['MCC'][0] for mcc_dic in hyper_results]
+	best_MCC = max(mcc_results)
+	best_mcc_index = mcc_results.index(best_MCC)
 	
 	#Formatting results for printing
-	hyper_results_np = np.around(np.array(hyper_results[:]), 2)
+	mcc_results_np = np.around(np.array(mcc_results[:]), 2)
 	
-	return hyper_param, hyper_results_np, best_MCC, hyper_results.index(best_MCC)
+	return hyper_param, mcc_results_np, best_MCC, hyper_param[best_mcc_index], hyper_results[best_mcc_index]
 		
 		
 		
@@ -197,8 +204,13 @@ if __name__ == "__main__":
 	sequences = enco.extract_sequences(train_fh)
 	train_Y = extract_true_classes(train_fh)	
 	folds, unique_folds = extract_fold_info(train_fh)
-	comb, mccs, best_mcc, best_mcc_index = grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
-	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest score: %0.2f\nBest Combination: %s"%(str(comb), str(mccs), best_mcc, str(comb[best_mcc_index])))
+	comb, mccs, best_mcc, best_comb, best_metrics = grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
+	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest MCC score: %0.2f\nBest Combination: %s"%(str(comb), str(mccs), best_mcc, str(best_comb)))
+	print("\nBest MCC: %0.2f +/- %0.2f"%best_metrics['MCC'])
+	print("\nBest Accuracy: %0.2f +/- %0.2f"%best_metrics['Accuracy'])
+	print("\nBest Precision: %0.2f +/- %0.2f"%best_metrics['Precision'])
+	print("\nBest Recall: %0.2f +/- %0.2f"%best_metrics['Recall'])
+	print("\nBest F1: %0.2f +/- %0.2f"%best_metrics['F1'])
 	print("--- %0.2f seconds ---" % (time.time() - start_time))
 	
 	
