@@ -4,6 +4,7 @@ import sys
 import pandas as pd
 import numpy as np
 from sklearn import svm
+import pickle, gzip
 from sklearn.metrics import confusion_matrix, matthews_corrcoef, precision_score, \
 recall_score, f1_score, accuracy_score
 #import matplotlib.pyplot as plt
@@ -145,10 +146,10 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 	gamma_list = An array type object that contains the list of gamma values to 
 	be evaluated (for the RBF kernel)
 	
-	sequences = An list that contains the list of sequences to be
+	sequences = A list that contains the list of sequences to be
 	encoded. It is assumed to be the first N-terminal residues of the sequence.  
 	
-	Y = Numpy array containing the true classes corresponding to each training 
+	Y = Numpy array containing the true classes (binary) corresponding to each training 
 	example.
 	
 	folds = List of length #ofexamples containing the fold labels for all 
@@ -182,7 +183,39 @@ def grid_search_validate(sequences, Y, k_list, c_list, gamma_list, folds, unique
 		
 		
 		
-		
+def final_train_SVM(sequences, Y, comb):
+	"""
+	This function will generate the final training model based on the combination
+	of hyperparameters that were found to be the best during cross-validation. 
+	
+	sequences = A list that contains the sequences to be encoded. 
+	It is assumed to be the first N-terminal residues of the sequence.  
+	It should contain the entire training set. 
+	
+	Y = Numpy array containing the true classes (binary) corresponding to each training 
+	example.
+	
+	best_combination = A 3 component tuple containing the values of the best 
+	hyperparameters in the order (k,c,g). It should correspond to hyper_param[best_mcc_index]
+	from the grid_search_validate() function. 
+	
+	"""
+	#Model folder
+	if not os.path.exists('../svm_models'):
+		os.system('mkdir -p -v '+'../svm_models')
+	
+	#Hyperparameter dictionary
+	hyper_param_dict = dict(K=comb[0], C = comb[1], Gamma = comb[2])
+	
+	#Obtaining X, the 2D array of 20-dim vectors per example
+	X = enco.encode_sequences(sequences, hyper_param_dict['K'], env.alphabet)
+	
+	#Define and train the model
+	mySVC = svm.SVC(C=hyper_param_dict['C'], kernel='rbf', gamma=hyper_param_dict['Gamma'])
+	mySVC.fit(X, Y)
+	
+	# Save the model to file 'myModel.pkl' using pickle
+	pickle.dump(mySVC, gzip.open('../svm_models/myModel.pkl.gz', 'w'))
 		
 	
 
@@ -205,6 +238,11 @@ if __name__ == "__main__":
 	train_Y = extract_true_classes(train_fh)	
 	folds, unique_folds = extract_fold_info(train_fh)
 	comb, mccs, best_comb, best_metrics = grid_search_validate(sequences, train_Y, env.k_list, env.c_list, env.gamma_list, folds, unique_folds)
+	
+	#Creating and saving training model
+	final_train_SVM(sequences, train_Y, best_comb)
+	
+	#Printing output
 	print("\nModel Tuning results:\nCombinations: %s\nMCC scores: %s\nBest Combination: %s"%(str(comb), str(mccs), str(best_comb)))
 	print("Best MCC: %0.2f +/- %0.2f"%best_metrics['MCC'])
 	print("Best Accuracy: %0.2f +/- %0.2f"%best_metrics['Accuracy'])
