@@ -9,4 +9,4 @@ Best Accuracy: 0.96 +/- 0.01
 Best Precision: 0.88 +/- 0.03
 Best Recall: 0.85 +/- 0.02
 Best F1: 0.86 +/- 0.02
---- 51.81 seconds ---
+--- 58.73 seconds ---

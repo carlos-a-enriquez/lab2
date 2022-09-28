@@ -81,7 +81,7 @@ def bench_evaluation(svm_model, sequences, true_Y, hyper_param_dict):
 
 if __name__ == "__main__":
 	try:
-		svm_model_fh = sys.argv[0]
+		svm_model_fh = sys.argv[1]
 		image_folder_path = sys.argv[2]
 		bench_fh = sys.argv[3]
 		best_comb= sys.argv[4:7] #Tuple of the best hyperparameters
@@ -95,6 +95,8 @@ if __name__ == "__main__":
 	if image_folder_path[-1] != "/":
 		image_folder_path += "/"		
 		
+	best_comb = int(best_comb[0]), int(best_comb[1]), best_comb[2]
+		
 	#Hyperparameter dictionary
 	hyper_param_dict = dict(K=best_comb[0], C = best_comb[1], Gamma = best_comb[2])
 			
@@ -106,17 +108,9 @@ if __name__ == "__main__":
 	#Evaluating and printing results
 	results = bench_evaluation(mySVC, sequences, bench_Y, hyper_param_dict)
 	
-	print("MCC: %0.2f +/- %0.2f"%results['MCC'])
-	print("Accuracy: %0.2f +/- %0.2f"%results['Accuracy'])
-	print("Precision: %0.2f +/- %0.2f"%results['Precision'])
-	print("Recall: %0.2f +/- %0.2f"%results['Recall'])
-	print("F1: %0.2f +/- %0.2f"%results['F1'])
-	print("--- %0.2f seconds ---" % (time.time() - start_time))
-	
-	
-	
-	
-	
-	
-	
+	print("MCC: %0.2f"%results['MCC'])
+	print("Accuracy: %0.2f"%results['Accuracy'])
+	print("Precision: %0.2f"%results['Precision'])
+	print("Recall: %0.2f"%results['Recall'])
+	print("F1: %0.2f"%results['F1'])
 	print("--- %0.2f seconds ---" % (time.time() - start_time))
