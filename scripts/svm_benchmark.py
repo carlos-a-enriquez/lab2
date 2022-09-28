@@ -28,7 +28,9 @@ def import_svm(svm_model_fh):
 	
 	svm_model_fh = specifies the pickle model dump
 	"""
-	return pickle.load(gzip.open(svm_model_fh, 'r')
+	with gzip.open(svm_model_fh, 'rb') as f:
+		data = pickle.load(f)	
+	return data
 	
 	
 def bench_evaluation(svm_model, sequences, true_Y, hyper_param_dict):

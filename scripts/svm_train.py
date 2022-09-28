@@ -215,7 +215,8 @@ def final_train_SVM(sequences, Y, comb):
 	mySVC.fit(X, Y)
 	
 	# Save the model to file 'myModel.pkl' using pickle
-	pickle.dump(mySVC, gzip.open('../svm_models/myModel.pkl.gz', 'w'))
+	with gzip.open('../svm_models/myModel.pkl.gz', 'wb') as f:
+		pickle.dump(mySVC, f)
 		
 	
 
