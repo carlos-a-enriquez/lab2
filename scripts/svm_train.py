@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sys
+import sys, os
 import pandas as pd
 import numpy as np
 from sklearn import svm

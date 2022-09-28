@@ -4,3 +4,4 @@ iteration*.csv
 *.tiff
 benchmark_set_scores.csv
 */__pycache__/*
+svm_models/*
