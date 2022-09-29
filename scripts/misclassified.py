@@ -18,8 +18,8 @@ def extract_missclass(bench_fh):
 	path = path where the new false positive and false negative files will be added
 	"""
 	bench = bench = pd.read_csv(bench_fh)
-	false_positives = bench.query('scores == 1 and class == NO_SP').loc[:, 'UniProtKB accession'].tolist()
-	false_negatives = bench.query('scores == 1 and class == NO_SP').loc[:, 'UniProtKB accession'].tolist()
+	false_positives = bench.query('scores == 1 and `Class` == \"NO_SP\"').loc[:, 'UniProtKB accession'].tolist()
+	false_negatives = bench.query('scores == 0 and `Class` == \"SP\"').loc[:, 'UniProtKB accession'].tolist()
 	
 	return false_positives, false_negatives
     
