@@ -57,6 +57,8 @@ def bench_evaluation(svm_model, sequences, true_Y, hyper_param_dict):
 	#Predict on test set
 	y_pred_bench = mySVC.predict(X)
 	
+	#exporting false positives and false negatives
+	
 	#Validate
 	cm = confusion_matrix(true_Y, y_pred_bench)	
 	graphics_confusion_matrix(cm, "N/A", image_folder_path, "svm_bench")
@@ -73,8 +75,31 @@ def bench_evaluation(svm_model, sequences, true_Y, hyper_param_dict):
 	names = ['MCC', 'Accuracy', 'Precision', 'Recall', 'F1']
 	metric_dict = {name:data for name,data in zip(names, metric_list)} #Obtain average, standard error pairs for each metric
 	
-	return metric_dict
+	return metric_dict, y_pred_bench
 	
+	
+
+def export_predict_df(bench_fh, y_pred_bench):
+	"""
+	This function will proceed to export a csv file
+	which would contain the original benchmark 
+	dataframe contents with a new column indicating
+	the model's predicted classification results. 
+	
+	bench_fh =  Assumes a filehandler that points to a .tsv
+	 file that contains the benchmark example data. 
+	 
+	 y_pred_bench = this object would be a numpy
+	 array containing the SVM model's predictions
+	 on the benchmark examples (classes should be binary 
+	 coded).
+	"""
+	bench = pd.read_csv(bench_fh, sep='\t')
+	
+	#Generating benchmark score dataframe
+	bench_predictions = pd.Series(y_pred_bench[:])
+	bench.loc[:,'scores'] = bench_predictions
+	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
 	
 
 
@@ -106,7 +131,9 @@ if __name__ == "__main__":
 	bench_Y = svt.extract_true_classes(bench_fh)
 	
 	#Evaluating and printing results
-	results = bench_evaluation(mySVC, sequences, bench_Y, hyper_param_dict)
+	results, y_pred = bench_evaluation(mySVC, sequences, bench_Y, hyper_param_dict)
+	export_predict_df(bench_fh, y_pred)
+	
 	
 	print("MCC: %0.2f"%results['MCC'])
 	print("Accuracy: %0.2f"%results['Accuracy'])
