@@ -19,6 +19,7 @@ from urllib.parse import urlparse, parse_qs, urlencode
 import requests
 from requests.adapters import HTTPAdapter, Retry
 import pandas as pd
+import csv
 
 
 def parse_accession_list(list_fh):
@@ -127,6 +128,7 @@ if __name__ == '__main__':
 	#Workflow
 	accession_list = parse_accession_list(accession_list_fh)
 	df = tsv_extractor(accession_list)
+	df.to_csv('debug.csv')
 	
 	
 
