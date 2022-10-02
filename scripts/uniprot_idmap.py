@@ -126,9 +126,9 @@ if __name__ == '__main__':
     
 	
 	#Workflow
-	accession_list = parse_accession_list(accession_list_fh)
+	accession_list = parse_accession_list(accession_list_fh) #list of relevant accession numbers
 	df = tsv_extractor(accession_list)
-	df.to_csv('debug.csv')
+	#df.to_csv('debug.csv')
 	
 	
 

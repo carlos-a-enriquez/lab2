@@ -28,6 +28,10 @@ c_list = [1, 2, 4]
 gamma_list = [0.5, 1, "scale"]
 
 
+#Skewed-class accession number names (evaluation scripts)
+
+
+
 
 
 
