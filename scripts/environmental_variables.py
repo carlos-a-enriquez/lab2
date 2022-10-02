@@ -30,6 +30,8 @@ gamma_list = [0.5, 1, "scale"]
 
 #Skewed-class accession number names (evaluation scripts)
 
+#Creating a list of acceptable eco-codes (filtering out automatic annotations)
+eco_exp = ['ECO:0000269','ECO:0000303','ECO:0000305','ECO:0000250','ECO:0000255','ECO:0000255','ECO:0000312','ECO:0007744']
 
 
 
