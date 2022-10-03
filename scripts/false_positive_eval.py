@@ -204,18 +204,19 @@ def fpr_transmembrane(false_pos, real_neg, eco_exp):
 	eco_exp = List of acceptable eco-codes (for filtering out automatic annotations)
 	"""
 	#Obtaining the actual negative (FP+TN) count
-	df_tot = ut.tsv_extractor(real_neg)
-	transmembrane_tot = df_tot.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
+	df = ut.tsv_extractor(real_neg)
+	transmembrane_tot = df.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
 	
 	#Obtaining the false positive count
-	df_tot = ut.tsv_extractor(false_pos)
-	transmembrane_fp = df_tot.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
+	df = ut.tsv_extractor(false_pos)
+	transmembrane_fp = df.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
 	
 	#Obtaining the TM FPR	
 	try:
 		FPR = transmembrane_fp/transmembrane_tot
 	except ZeroDivisionError:
 		FPR = np.nan
+		print("Division by 0 error")
 		
 	return FPR
 	
@@ -251,8 +252,7 @@ def transit_analyze(df, eco_exp):
 	
 	#saving results to numpy array
 	#counts = dict(all_transit=all_transit_count, mithocondria=mitoch_count, chloroplast=chloro_count, peroxisome=perox_count)
-	counts = np.array([all_transit_count, mitoch_count, chloro_count, perox_count])
-		
+	counts = np.array([all_transit_count, mitoch_count, chloro_count, perox_count])		
 	
 	return counts
 	
@@ -266,7 +266,28 @@ def fpr_transit(false_pos, real_neg, eco_exp):
 	eco_exp = List of acceptable eco-codes (for filtering out automatic annotations)
 	"""
 	#Obtaining the actual negative (FP+TN) count
-	df_tot = ut.tsv_extractor(real_neg)
+	df = ut.tsv_extractor(real_neg)
+	transit_tot = transit_analyze(df, eco_exp)
+	
+	#Obtaining the false positive count
+	df = ut.tsv_extractor(false_pos)
+	transit_fp = transit_analyze(df, eco_exp)
+	
+	#Dividing the arrays to obtain an FPR array (checking for division by zero errors)
+	with np.errstate(divide='raise', invalid='raise'): #Ensures that division by zero raises a formal python exception
+		try:
+			fpr_array = transit_fp/transit_tot
+		except FloatingPointError:
+			print("Division by zero error for one of the organelle counts \n(total | mitochondria | chloroplasts | peroxisomes):\n%s\n"%transit_tot)
+			
+	with np.errstate(divide='ignore', invalid='ignore'): #suppresses the standard numpy warning
+		fpr_array = transit_fp/transit_tot
+	
+	return fpr_array
+			
+	
+	
+	
 	
 	
 	
@@ -293,6 +314,14 @@ if __name__ == '__main__':
 	false_pos, real_neg = (ut.parse_accession_list(acc_fh) for acc_fh in (false_pos_fh, real_neg_fh))
 	FPR = fpr(false_pos, real_neg)
 	FPR_TM = fpr_transmembrane(false_pos, real_neg, env.eco_exp)
+	all_transit, mito, chloro, perox = fpr_transit(false_pos, real_neg, env.eco_exp)
+	
+	print("The general FPR for the benchmark is: %0.2f"%FPR)
+	print("The transmembrane FPR for the benchmark is: %0.2f"%FPR_TM)
+	print("The transit peptide total FPR is: %0.2f"%all_transit)
+	print("The transit peptide FPR for mitochondria is: %0.2f"%mito)
+	print("The transit peptide FPR for chloroplasts is: %0.2f"%chloro)
+	print("The transit peptide FPR for peroxisomes is: %0.2f"%perox)
 	
 	print("--- %0.2f seconds ---" % (time.time() - start_time))
 	
