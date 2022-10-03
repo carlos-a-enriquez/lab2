@@ -1,5 +1,6 @@
 directory.txt
 iteration*.csv
+*raw.csv
 *.png
 *.tiff
 benchmark_set_scores.csv

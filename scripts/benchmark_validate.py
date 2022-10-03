@@ -53,7 +53,7 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet, image_folder_pa
 	#Generating benchmark score dataframe
 	bench_predictions = pd.Series(bench_predictions[:])
 	bench.loc[:,'scores'] = bench_predictions
-	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
+	bench.to_csv(image_folder_path+'benchmark_set_scores_raw.csv')
 	
 	
 	
@@ -73,7 +73,7 @@ def benchmark_eval(best_thresholds, image_folder_path):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
 	#Extracting the benchmark dataframe
-	bench_scores = pd.read_csv(image_folder_path+'benchmark_set_scores.csv')
+	bench_scores = pd.read_csv(image_folder_path+'benchmark_set_scores_raw.csv')
 	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
@@ -83,6 +83,13 @@ def benchmark_eval(best_thresholds, image_folder_path):
 	cm = cr.confusion_matrix_generator(bench_scores, optimal_threshold)
 	cr.graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, 'bench')
 	cr.graphics_density_distribution(bench_scores, optimal_threshold, image_folder_path, 'bench')
+	
+	#Printing results (replaces raw score with binary prediction)
+	y_pred = [int(scr >= optimal_threshold) for scr in bench_scores.loc[:,'scores'].to_list()]
+	bench.loc[:,'scores'] = y_pred
+	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
+	
+	
 	
 	
 	
