@@ -20,7 +20,7 @@ import cross_validation as cr
 
 
 
-def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
+def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet, image_folder_path):
 	"""
 	This function will determine a Position Specific Weight Matrix for the SP
 	subsequence of the ENTIRE training set. Then, it will use it to assign scores
@@ -34,6 +34,8 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
 	
 	aa_ratios_alphabet = List of background amino acid ratio composition (Swissprot). 
 	Should be in the same order as "alphabet".
+	
+	image_folder_path = Location where the benchmark results will be saved
 	
 	Requirements: The function PSWM_gen_folds() from cross_validate. 
 	"""
@@ -71,7 +73,7 @@ def benchmark_eval(best_thresholds, image_folder_path):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
 	#Extracting the benchmark dataframe
-	bench_scores = pd.read_csv('benchmark_set_scores.csv')
+	bench_scores = pd.read_csv(image_folder_path+'benchmark_set_scores.csv')
 	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
@@ -96,20 +98,21 @@ if __name__ == "__main__":
 	#Opening the input examples file and defining the output image folder path
 	try:
 		train_fh = sys.argv[1]
-		image_folder_path = sys.argv[2]
+		image_folder_p = sys.argv[2]
 		bench_fh = sys.argv[3]
 		cross_validate= sys.argv[4] #Write yes to specifiy that the cross_validation_init code must be executed again
 		
 	except IndexError:
 		train_fh = input("insert the training data path   ")
-		image_folder_path = input("insert the output image folder path  ")
+		image_folder_p = input("insert the output image folder path  ")
 		bench_fh = input("insert the benchmark data paths  ")
 		cross_validate= input("Should the cross-validation procedure be repeated for the training data? (Y/N)  ")
 	
-	if image_folder_path[-1] != "/":
-		image_folder_path += "/"
+	if image_folder_p[-1] != "/":
+		image_folder_p += "/"
 		
-	image_folder_path = image_folder_path + 'benchmark/'		
+	image_folder_bench = image_folder_p + 'benchmark/'
+	image_folder_train = image_folder_p + 'train/'
 		
 	#Loading the dataframes
 	train = pd.read_csv(train_fh, sep='\t')
@@ -118,16 +121,16 @@ if __name__ == "__main__":
 	#Generating the scores for cross_validation
 	if cross_validate.lower()[0] == "y":
 		print("Repeating cross-validation data frame generation")
-		cr.cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
+		cr.cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet, image_folder_train)
 	else:
 		print("The cross-validation data frame (with scores) generation procedure was skipped")
 		
 		
 	#Finding the best thresholds from the cross-validation score results
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
-	best_thresholds = cr.threshold_optimization(n_folds, image_folder_path)
+	best_thresholds = cr.threshold_optimization(n_folds, image_folder_train)
 	
 	#Threshold evaluation on benchmark
 	benchmark_scores(train, bench, env.alphabet, env.aa_ratios_alphabet)
-	benchmark_eval(best_thresholds, image_folder_path)
+	benchmark_eval(best_thresholds, image_folder_bench)
 	

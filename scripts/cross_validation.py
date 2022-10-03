@@ -39,13 +39,16 @@ def PSWM_gen_folds(train, alphabet, aa_ratios_alphabet):
 
 
 
-def cross_validation_init(train, alphabet, aa_ratios_alphabet):
+def cross_validation_init(train, alphabet, aa_ratios_alphabet, output_folder):
 	''''This function takes a dataframe of examples as input. The table should contain 
 	a "Cross-validation fold" column that specifies each of the k-folds to which each 
 	example belongs.
 	The function will return one updated dataframe table with corresponding vH scores for each of the k
 	training iterations. In the case of the testing examples, they will have the value 'test' assigned
-	so they can be filtered out and used later.'''
+	so they can be filtered out and used later.
+	
+	output_folder= path where the training csv files will be saved
+	'''
 	for fold in train.loc[:,'Cross-validation fold'].unique().tolist(): #Iterate over every subset in order to assign it the rule of "testing subset"
 		#Separating training and testing
 		train_iter = train.loc[train.loc[:,'Cross-validation fold'] != fold, :] #Exclude the testing examples
@@ -68,12 +71,12 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet):
 		#Creating train dataframe
 		train_predictions = pd.Series(train_predictions[:])
 		train_iter.loc[:,'scores'] = train_predictions
-		train_iter.to_csv('iteration_'+str(fold)+'_vh_training.csv')
+		train_iter.to_csv(output_folder+'iteration_'+str(fold)+'_vh_training.csv')
 		
 		#Creating test dataframe
 		test_predictions = pd.Series(test_predictions[:])
 		test_iter.loc[:,'scores'] = test_predictions
-		test_iter.to_csv('iteration_'+str(fold)+'_vh_testing.csv')
+		test_iter.to_csv(output_folder+'iteration_'+str(fold)+'_vh_testing.csv')
 		
 
 
@@ -195,7 +198,7 @@ def threshold_optimization(n_folds, image_folder_path):
 	#Obtaining the thresholds for each cross-validation iteration
 	for fold in range(n_folds):
 		#Loading training data
-		df_train = pd.read_csv('iteration_%d_vh_training.csv'%(fold))
+		df_train = pd.read_csv(image_folder_path+'iteration_%d_vh_training.csv'%(fold))
 		y_score = df_train.loc[:,'scores'].to_list()
 		
 		#binary representation of the true (observed) class for each training example: 0=NO_SP, 1=SP
@@ -224,7 +227,7 @@ def threshold_optimization(n_folds, image_folder_path):
 		threshold_list.append(optimal_threshold)       
 
 		#Extracting testing dataframe
-		df_test = pd.read_csv('iteration_%d_vh_testing.csv'%(fold))
+		df_test = pd.read_csv(image_folder_path+'iteration_%d_vh_testing.csv'%(fold))
 
 		#Doing skewed class evaluation on this test set iteration (df_test)
 		cm = confusion_matrix_generator(df_test, optimal_threshold)
