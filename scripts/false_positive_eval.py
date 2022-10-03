@@ -22,8 +22,11 @@ Therefore, the following is necessary as input:
 import sys
 import pandas as pd
 import numpy as np
+import time
 import uniprot_idmap as ut
 import environmental_variables as env
+
+start_time = time.time()
 
 
 def parse_transmembrane(annotation, eco_exp):
@@ -144,6 +147,40 @@ def parse_transit(annotation, eco_exp):
 		return False, np.nan
 		
 
+def apply_parse_transit(x, codes):
+	"""
+	Defining apply function (needed to use df.apply() without lambda function)
+	x= specific dataframe row obtained with .apply()
+	codes= List of acceptable eco-codes (for filtering out automatic annotations)
+	"""
+	return parse_transit(x['Transit peptide'], codes)
+	
+def extracting_counts(x):
+	"""Overlapping organelle counts are extracted by parsing
+	the 'organelle' annotation.
+	Note: this function is only meant to be used with valid organelle annotations
+	(no NaN).
+	"""
+	#Initial conditions and checking that the string is valid
+	mito, chloro, pero = False, False, False
+	if (not isinstance(x['org_annotation'], str)) or x['org_annotation'].lower()=='nan':
+		return mito, chloro, pero
+	
+	#Parsing multiple organelle annotations
+	annot_list = x['org_annotation'].lower().strip().split("and")
+
+	for annot in annot_list:
+		annot = annot.strip()
+		if annot == "mitochondrion":
+			mito = True
+		elif annot == "chloroplast":
+			chloro = True
+		elif annot == "Peroxisome":
+			pero = True
+  
+	return mito, chloro, pero
+		
+
 def fpr(false_pos, real_neg):
 	"""
 	Generates the baseline false positive rate
@@ -159,7 +196,8 @@ def fpr(false_pos, real_neg):
 def fpr_transmembrane(false_pos, real_neg, eco_exp):
 	"""
 	Outputs the FPR for proteins with a transmembrane 
-	domain in the first 50 residues.
+	domain in the first 50 residues. 
+	Returns the FPR specific for examples of this subset.
 	
 	false_pos = list of FP accession ids
 	real_neg = list of FP+TN accession ids
@@ -173,7 +211,64 @@ def fpr_transmembrane(false_pos, real_neg, eco_exp):
 	df_tot = ut.tsv_extractor(false_pos)
 	transmembrane_fp = df_tot.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
 	
-	print(transmembrane_fp, transmembrane_tot)
+	#Obtaining the TM FPR	
+	try:
+		FPR = transmembrane_fp/transmembrane_tot
+	except ZeroDivisionError:
+		FPR = np.nan
+		
+	return FPR
+	
+
+def transit_analyze(df, eco_exp):
+	"""
+	This function is mean to carry out the procedure for extracting the 
+	organelle-specific transit peptide annotation count for a specific 
+	dataframe of examples. This is a subroutine of fpr_transit, 
+	which will use this function twice: for false positives and false negatives.
+	
+	df = Dataframe produced by the function ut.tsv_extractor() from the 
+	uniprot_idmap module. 
+	
+	eco_exp = List of acceptable eco-codes (for filtering out automatic annotations)
+	"""
+	#Applying the parsing function to the transit annotation column (as a series)
+	transit_pass = df.apply(func=apply_parse_transit, axis=1, args=(eco_exp,), result_type='expand')\
+	.rename(mapper = {0:'checks_out', 1:'org_annotation'}, axis=1)
+	
+	#Final amount of examples with valid transit peptide annotations
+	all_transit_count = transit_pass.loc[:,'checks_out'].sum()
+	
+	#Finding the individual organelle counts:
+	#Obtaining boolean columns for each possible organelle based on the annotation
+	organelle_parsed = transit_pass.query('checks_out == True').apply(func=extracting_counts, axis=1, result_type='expand')\
+	.rename(mapper = {0:'Mitochondria', 1:"Chloroplast", 2:"Peroxisome"}, axis=1)
+	
+	#Finding the final counts
+	mitoch_count = len(organelle_parsed.query('Mitochondria == True').index)
+	chloro_count = len(organelle_parsed.query('Chloroplast == True').index)
+	perox_count = len(organelle_parsed.query('Peroxisome == True').index)
+	
+	#saving results to numpy array
+	#counts = dict(all_transit=all_transit_count, mithocondria=mitoch_count, chloroplast=chloro_count, peroxisome=perox_count)
+	counts = np.array([all_transit_count, mitoch_count, chloro_count, perox_count])
+		
+	
+	return counts
+	
+	
+def fpr_transit(false_pos, real_neg, eco_exp):
+	"""
+	Outputs the FPR for proteins with a transit signal peptide in the N terminal region.
+	
+	false_pos = list of FP accession ids
+	real_neg = list of FP+TN accession ids
+	eco_exp = List of acceptable eco-codes (for filtering out automatic annotations)
+	"""
+	#Obtaining the actual negative (FP+TN) count
+	df_tot = ut.tsv_extractor(real_neg)
+	
+	
 	
 	
 	
@@ -196,7 +291,10 @@ if __name__ == '__main__':
 		
 	#Workflow
 	false_pos, real_neg = (ut.parse_accession_list(acc_fh) for acc_fh in (false_pos_fh, real_neg_fh))
-	fpr_transmembrane(false_pos, real_neg, env.eco_exp)
+	FPR = fpr(false_pos, real_neg)
+	FPR_TM = fpr_transmembrane(false_pos, real_neg, env.eco_exp)
+	
+	print("--- %0.2f seconds ---" % (time.time() - start_time))
 	
 		
 	
