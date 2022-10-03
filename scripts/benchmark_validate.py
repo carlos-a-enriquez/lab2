@@ -37,6 +37,10 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
 	
 	Requirements: The function PSWM_gen_folds() from cross_validate. 
 	"""
+	#Folder creation	
+	if not os.path.exists(image_folder_path[:-1]):
+		os.system('mkdir -p -v '+image_folder_path[:-1])
+		
 	#PSWM profile generation for training dataset
 	pswm = cr.PSWM_gen_folds(train, alphabet, aa_ratios_alphabet) #PSWM for the entire training dataset
 	
@@ -47,7 +51,7 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet):
 	#Generating benchmark score dataframe
 	bench_predictions = pd.Series(bench_predictions[:])
 	bench.loc[:,'scores'] = bench_predictions
-	bench.to_csv('benchmark_set_scores.csv')
+	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
 	
 	
 	
@@ -62,8 +66,7 @@ def benchmark_eval(best_thresholds, image_folder_path):
 	Requirements:
 	- skewed_class_eval() function from the cross_validation module. 
 	"""
-	#Folder creation
-	image_folder_path = image_folder_path + 'benchmark/'
+	#Folder creation	
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
@@ -104,7 +107,9 @@ if __name__ == "__main__":
 		cross_validate= input("Should the cross-validation procedure be repeated for the training data? (Y/N)  ")
 	
 	if image_folder_path[-1] != "/":
-		image_folder_path += "/"		
+		image_folder_path += "/"
+		
+	image_folder_path = image_folder_path + 'benchmark/'		
 		
 	#Loading the dataframes
 	train = pd.read_csv(train_fh, sep='\t')
