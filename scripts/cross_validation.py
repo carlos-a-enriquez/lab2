@@ -49,6 +49,11 @@ def cross_validation_init(train, alphabet, aa_ratios_alphabet, output_folder):
 	
 	output_folder= path where the training csv files will be saved
 	'''
+	#Folder creation	
+	if not os.path.exists(output_folder[:-1]):
+		os.system('mkdir -p -v '+output_folder[:-1])
+		
+	
 	for fold in train.loc[:,'Cross-validation fold'].unique().tolist(): #Iterate over every subset in order to assign it the rule of "testing subset"
 		#Separating training and testing
 		train_iter = train.loc[train.loc[:,'Cross-validation fold'] != fold, :] #Exclude the testing examples

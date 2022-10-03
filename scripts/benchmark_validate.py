@@ -131,6 +131,6 @@ if __name__ == "__main__":
 	best_thresholds = cr.threshold_optimization(n_folds, image_folder_train)
 	
 	#Threshold evaluation on benchmark
-	benchmark_scores(train, bench, env.alphabet, env.aa_ratios_alphabet)
+	benchmark_scores(train, bench, env.alphabet, env.aa_ratios_alphabet, image_folder_bench)
 	benchmark_eval(best_thresholds, image_folder_bench)
 	
