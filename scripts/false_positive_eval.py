@@ -64,7 +64,7 @@ def parse_transmembrane(annotation, eco_exp):
 			#Checking range_t
 			range_TM_l, range_TM_h = term.split()[1].split("..") #extract the transmembrane range
 			try:
-				range_TM_h = int(range_TM_l)
+				range_TM_h = int(range_TM_h)
 			except ValueError:
 				continue
 			if range_TM_h <= 50:
