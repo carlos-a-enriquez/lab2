@@ -45,27 +45,27 @@ def parse_transmembrane(annotation, eco_exp):
 
 	#Initial conditions
 	annotation_count = 0
-	range, evidence = False, False
+	range_t, evidence = False, False
 
 	for term in annotation.split(";"): #Split annotation
 		term = term.strip()
 
 		if term.startswith("TRANSMEM"):
 			#checking previous annotation
-			if range and evidence:
+			if range_t and evidence:
 				#print("Passed with annotation number %d"%annotation_count)
 				return True
-			range, evidence = False, False #Checking a new annotation
+			range_t, evidence = False, False #Checking a new annotation
 			annotation_count += 1
 
-			#Checking range
+			#Checking range_t
 			range_TM_l, range_TM_h = term.split()[1].split("..") #extract the transmembrane range
 			try:
 				range_TM_l = int(range_TM_l)
 			except ValueError:
 				continue
 			if range_TM_l <= 50:
-				range = True
+				range_t = True
 				#print("Transmembrane in the first 50 residues for annotation %d"%annotation_count)
 
 		elif term.startswith("/evidence="):
@@ -79,7 +79,7 @@ def parse_transmembrane(annotation, eco_exp):
 			pass
 
 	#Checking last annotation
-	if range and evidence:
+	if range_t and evidence:
 		#print("Passed with annotation number %d"%annotation_count)
 		return True
 	else:
