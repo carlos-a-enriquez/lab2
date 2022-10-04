@@ -20,7 +20,6 @@ Therefore, the following is necessary as input:
 """
 
 import sys
-import pandas as pd
 import numpy as np
 import time
 import uniprot_idmap as ut
@@ -193,23 +192,21 @@ def fpr(false_pos, real_neg):
 	return len(false_pos)/len(real_neg)
 	
 	
-def fpr_transmembrane(false_pos, real_neg, eco_exp):
+def fpr_transmembrane(df_false_pos, df_real_neg, eco_exp):
 	"""
 	Outputs the FPR for proteins with a transmembrane 
 	domain in the first 50 residues. 
 	Returns the FPR specific for examples of this subset.
 	
-	false_pos = list of FP accession ids
-	real_neg = list of FP+TN accession ids
+	df_false_pos = Uniprot id mapping of FP accession ids
+	df_real_neg = Uniprot id mapping of FP accession ids of FP+TN accession ids
 	eco_exp = List of acceptable eco-codes (for filtering out automatic annotations)
 	"""
 	#Obtaining the actual negative (FP+TN) count
-	df = ut.tsv_extractor(real_neg)
-	transmembrane_tot = df.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
+	transmembrane_tot = df_real_neg.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
 	
 	#Obtaining the false positive count
-	df = ut.tsv_extractor(false_pos)
-	transmembrane_fp = df.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
+	transmembrane_fp = df_false_pos.loc[:,'Transmembrane'].apply(func=parse_transmembrane, args=(eco_exp,)).sum()
 	
 	#Obtaining the TM FPR	
 	try:
@@ -257,21 +254,19 @@ def transit_analyze(df, eco_exp):
 	return counts
 	
 	
-def fpr_transit(false_pos, real_neg, eco_exp):
+def fpr_transit(df_false_pos, df_real_neg, eco_exp):
 	"""
 	Outputs the FPR for proteins with a transit signal peptide in the N terminal region.
 	
-	false_pos = list of FP accession ids
-	real_neg = list of FP+TN accession ids
+	df_false_pos = Uniprot id mapping of FP accession ids
+	df_real_neg = Uniprot id mapping of FP accession ids of FP+TN accession ids
 	eco_exp = List of acceptable eco-codes (for filtering out automatic annotations)
 	"""
 	#Obtaining the actual negative (FP+TN) count
-	df = ut.tsv_extractor(real_neg)
-	transit_tot = transit_analyze(df, eco_exp)
+	transit_tot = transit_analyze(df_real_neg, eco_exp)
 	
 	#Obtaining the false positive count
-	df = ut.tsv_extractor(false_pos)
-	transit_fp = transit_analyze(df, eco_exp)
+	transit_fp = transit_analyze(df_false_pos, eco_exp)
 	
 	#Dividing the arrays to obtain an FPR array (checking for division by zero errors)
 	with np.errstate(divide='raise', invalid='raise'): #Ensures that division by zero raises a formal python exception
@@ -312,9 +307,10 @@ if __name__ == '__main__':
 		
 	#Workflow
 	false_pos, real_neg = (ut.parse_accession_list(acc_fh) for acc_fh in (false_pos_fh, real_neg_fh))
+	df_f_pos, df_r_neg = (ut.tsv_extractor(ls) for ls in (false_pos, real_neg))
 	FPR = fpr(false_pos, real_neg)
-	FPR_TM = fpr_transmembrane(false_pos, real_neg, env.eco_exp)
-	all_transit, mito, chloro, perox = fpr_transit(false_pos, real_neg, env.eco_exp)
+	FPR_TM = fpr_transmembrane(df_f_pos, df_r_neg, env.eco_exp)
+	all_transit, mito, chloro, perox = fpr_transit(df_f_pos, df_r_neg, env.eco_exp)
 	
 	print("The general FPR for the benchmark is: %0.2f"%FPR)
 	print("The transmembrane FPR for the benchmark is: %0.2f"%FPR_TM)
