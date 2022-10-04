@@ -18,4 +18,7 @@ command time -v ./benchmark_validate.py ../input_data/training_set.tsv ../output
 ```
 
 ### 3. False positive evaluation for the vH benchmark results
+```
+./false_positive_eval.py ../output_graphs3/benchmark/real_negatives.txt ../output_graphs3/benchmark/false_positives.txt >../output_graphs3/benchmark/fpr_bench_stats.txt
+```
 
