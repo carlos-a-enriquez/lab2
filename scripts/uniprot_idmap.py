@@ -7,6 +7,15 @@ by programmatically acccessing the REST API.
 
 The code herein is based on the suggestions published in:
 https://www.uniprot.org/help/id_mapping
+
+Note: The get_id_mapping_results_link() function was excluded
+to ensure that the tsv file is always downloaded with the specific
+file configuration that we need for the analysis (
+in terms of the columns that we need (transmembrane and transit), etc.)
+Therefore, the url template is found hardcoded into the tsv_extractor() function. 
+
+In addition, the search API was chosen in place of the stream API of Uniprot 
+ID mapping. 
 """
 
 import sys
@@ -98,7 +107,7 @@ def get_id_mapping_results_stream(url):
 	
 def print_progress_batches(batch_index, size, total):
 	n_fetched = min((batch_index + 1) * size, total)
-	print(f"Fetched: {n_fetched} / {total}")
+	print(f"Fetched: {n_fetched} / {total}", file=sys.stderr)
 	
 	
 def get_next_link(headers):
