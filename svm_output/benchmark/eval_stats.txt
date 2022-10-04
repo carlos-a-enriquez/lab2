@@ -1,11 +1,6 @@
-Division by zero error for one of the organelle counts 
-(total | mitochondria | chloroplasts | peroxisomes):
-[1337  753  621    0]
-
-The general FPR for the benchmark is: 0.02
-The transmembrane FPR for the benchmark is: 0.28
-The transit peptide total FPR is: 0.04
-The transit peptide FPR for mitochondria is: 0.05
-The transit peptide FPR for chloroplasts is: 0.02
-The transit peptide FPR for peroxisomes is: nan
---- 27.33 seconds ---
+MCC: 0.61
+Accuracy: 0.97
+Precision: 0.53
+Recall: 0.75
+F1: 0.62
+--- 0.97 seconds ---
