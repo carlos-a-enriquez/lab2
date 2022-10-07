@@ -9,26 +9,46 @@ import numpy as np
 
 #from sklearn.metrics import precision_recall_curve
 #from sklearn.metrics import roc_curve, auc
-#from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix
 #from confusion_matrix.cf_matrix import make_confusion_matrix
 
 import environmental_variables as env
 #import vH_train as tra
 import vH_predict as pre
 import cross_validation as cr
+import svm_train as svt
 
 
+start_time = time.time()
 
 
-def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet, image_folder_path):
+def extract_X_and_Y(bench_df):
+	"""
+	This function extractsboth the 50 residue sequence (for PSWM predictions)
+	 and the true sequence classifications from the dataframe.
+	
+	bench_fh = Assumes a filehandler that points to a .tsv
+	 file with the 'Class' column. 
+	 
+	 Returns an list of sequences (Positive and negative examples included. 
+	 Also, the full 50 aa sequence is used.) and an array of the coded classes. 
+	"""
+	bench = pd.read_csv(bench_fh, sep='\t')
+	X = list(bench['Sequence (first 50 N-terminal residues)']) 
+	true_Y  = svt.extract_true_classes(bench_fh)
+	return X,true_Y
+	
+
+
+def benchmark_scores(train_fh, bench_fh, alphabet, aa_ratios_alphabet, image_folder_path):
 	"""
 	This function will determine a Position Specific Weight Matrix for the SP
 	subsequence of the ENTIRE training set. Then, it will use it to assign scores
 	to every sequence in the benchmark dataset. 
 	
-	train = the training dataset dataframe
+	train_fh = the training dataset path
 	
-	bench = the benchmark dataset dataframe
+	bench_fh = the benchmark dataset path
 	
 	alphabet= Order of amino acid residues to be used for matrix generation
 	
@@ -43,12 +63,15 @@ def benchmark_scores(train, bench, alphabet, aa_ratios_alphabet, image_folder_pa
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])
 		
+	#Loading training and benchmark data
+	train = pd.read_csv(train_fh, sep='\t')	
+	bench_X, _ = extract_X_and_Y(bench_fh)
+		
 	#PSWM profile generation for training dataset
 	pswm = cr.PSWM_gen_folds(train, alphabet, aa_ratios_alphabet) #PSWM for the entire training dataset
 	
 	#Predict on benchmark sequences
-	bench_predict = list(bench['Sequence (first 50 N-terminal residues)']) #Positive and negative examples included. Also, the full 50 aa sequence is used. 
-	bench_predictions = pre.predict_seq(bench_predict, pswm, alphabet)
+	bench_predictions = pre.predict_seq(bench_X, pswm, alphabet)
 	
 	#Generating benchmark score dataframe
 	bench_predictions = pd.Series(bench_predictions[:])
@@ -72,22 +95,36 @@ def benchmark_eval(best_thresholds, image_folder_path):
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
-	#Extracting the benchmark dataframe
-	bench_scores = pd.read_csv(image_folder_path+'benchmark_set_scores_raw.csv')
+	#Extracting the benchmark true scores and predictions
+	_, true_Y = extract_X_and_Y(image_folder_path+'benchmark_set_scores_raw.csv')
+	pred_Y = [int(scr >= optimal_threshold) for scr in bench.loc[:,'scores'].to_list()]
 	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
 	optimal_threshold = np.average(best_thresholds)	
 	
 	#Doing the skewed class analysis based on the threshold
-	cm = cr.confusion_matrix_generator(bench_scores, optimal_threshold)
+	cm = confusion_matrix(true_Y, pred_Y)	
 	cr.graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, 'bench')
 	cr.graphics_density_distribution(bench_scores, optimal_threshold, image_folder_path, 'bench')
 	
+	#Validate statistics
+	MCC = matthews_corrcoef(true_Y, pred_Y)
+	acc = accuracy_score(true_Y, pred_Y)
+	prec = precision_score(true_Y, pred_Y, zero_division='warn')
+	rec = recall_score(true_Y, pred_Y, zero_division='warn')
+	f1 = f1_score(true_Y, pred_Y)
+	metric_list = [MCC, acc, prec, rec, f1]
+	
+	#Metrics
+	names = ['MCC', 'Accuracy', 'Precision', 'Recall', 'F1']
+	metric_dict = {name:data for name,data in zip(names, metric_list)} #Obtain error metric
+	
 	#Printing results (replaces raw score with binary prediction)
-	y_pred = [int(scr >= optimal_threshold) for scr in bench_scores.loc[:,'scores'].to_list()]
 	bench.loc[:,'scores'] = y_pred
 	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
+	
+	return metric_dict
 	
 	
 	
@@ -121,10 +158,6 @@ if __name__ == "__main__":
 	image_folder_bench = image_folder_p + 'benchmark/'
 	image_folder_train = image_folder_p + 'train/'
 		
-	#Loading the dataframes
-	train = pd.read_csv(train_fh, sep='\t')
-	bench = pd.read_csv(bench_fh, sep='\t')
-	
 	#Generating the scores for cross_validation
 	if cross_validate.lower()[0] == "y":
 		print("Repeating cross-validation data frame generation")
@@ -132,12 +165,26 @@ if __name__ == "__main__":
 	else:
 		print("The cross-validation data frame (with scores) generation procedure was skipped")
 		
-		
+	
+	### Workflow###
+	
 	#Finding the best thresholds from the cross-validation score results
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
 	best_thresholds = cr.threshold_optimization(n_folds, image_folder_train)
 	
+	#Obtaining the prediction input
+	bench_X, bench_Y = extract_X_and_Y(bench_df)
+	
+	
 	#Threshold evaluation on benchmark
-	benchmark_scores(train, bench, env.alphabet, env.aa_ratios_alphabet, image_folder_bench)
-	benchmark_eval(best_thresholds, image_folder_bench)
+	benchmark_scores(train_fh, bench_fh, env.alphabet, env.aa_ratios_alphabet, image_folder_bench)
+	results = benchmark_eval(best_thresholds, image_folder_bench)
+	
+	#Print results
+	print("MCC: %0.2f"%results['MCC'])
+	print("Accuracy: %0.2f"%results['Accuracy'])
+	print("Precision: %0.2f"%results['Precision'])
+	print("Recall: %0.2f"%results['Recall'])
+	print("F1: %0.2f"%results['F1'])
+	print("--- %0.2f seconds ---" % (time.time() - start_time))
 	
