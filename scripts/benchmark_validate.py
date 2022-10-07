@@ -17,17 +17,18 @@ import environmental_variables as env
 import vH_predict as pre
 import cross_validation as cr
 import svm_train as svt
+import time
 
 
 start_time = time.time()
 
 
-def extract_X_and_Y(bench_df):
+def extract_X_and_Y(bench_fh):
 	"""
 	This function extractsboth the 50 residue sequence (for PSWM predictions)
 	 and the true sequence classifications from the dataframe.
-	
-	bench_fh = Assumes a filehandler that points to a .tsv
+	 
+	 bench_fh = Assumes a filehandler that points to a .tsv
 	 file with the 'Class' column. 
 	 
 	 Returns an list of sequences (Positive and negative examples included. 
@@ -35,8 +36,42 @@ def extract_X_and_Y(bench_df):
 	"""
 	bench = pd.read_csv(bench_fh, sep='\t')
 	X = list(bench['Sequence (first 50 N-terminal residues)']) 
-	true_Y  = svt.extract_true_classes(bench_fh)
-	return X,true_Y
+	true_Y  = svt.extract_true_classes(bench_fh)	
+	return X, true_Y
+	
+	
+def export_predict_df(bench_fh, Y_raw, Y_pred, image_folder_path):
+	"""
+	This function will proceed to export a csv file
+	which would contain the original benchmark 
+	dataframe contents with a new column indicating
+	the model's raw scores and predicted classification
+	results. 
+	
+	bench_fh =  Assumes a filehandler that points to a .tsv
+	 file that contains the benchmark example data. 
+	 
+	Y_pred = this object would be a numpy
+	 array containing the vH model's predictions
+	 on the benchmark examples (classes should be binary 
+	 coded).
+	 
+	 Y_raw = this object would be a numpy
+	 array containing the vH model's output raw score
+	 on the benchmark examples.
+	"""
+	#Folder creation	
+	if not os.path.exists(image_folder_path[:-1]):
+		os.system('mkdir -p -v '+image_folder_path[:-1])
+	
+	bench = pd.read_csv(bench_fh, sep='\t')
+	
+	#Generating benchmark score dataframe
+	bench_predictions = pd.Series(Y_pred[:])
+	bench_pred_raw = pd.Series(Y_raw[:])
+	bench.loc[:,'raw_scores'] = bench_pred_raw
+	bench.loc[:,'scores'] = bench_predictions
+	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
 	
 
 
@@ -44,7 +79,8 @@ def benchmark_scores(train_fh, bench_fh, alphabet, aa_ratios_alphabet, image_fol
 	"""
 	This function will determine a Position Specific Weight Matrix for the SP
 	subsequence of the ENTIRE training set. Then, it will use it to assign scores
-	to every sequence in the benchmark dataset. 
+	to every sequence in the benchmark dataset. In addition, it will obtain the best
+	threshold list from the training dataset. 
 	
 	train_fh = the training dataset path
 	
@@ -61,32 +97,38 @@ def benchmark_scores(train_fh, bench_fh, alphabet, aa_ratios_alphabet, image_fol
 	"""
 	#Folder creation	
 	if not os.path.exists(image_folder_path[:-1]):
-		os.system('mkdir -p -v '+image_folder_path[:-1])
-		
+		os.system('mkdir -p -v '+image_folder_path[:-1])	
+	
 	#Loading training and benchmark data
 	train = pd.read_csv(train_fh, sep='\t')	
 	bench_X, _ = extract_X_and_Y(bench_fh)
+	
+	#Finding the best thresholds from the cross-validation score results
+	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
+	best_thresholds = cr.threshold_optimization(n_folds, image_folder_path)
 		
 	#PSWM profile generation for training dataset
 	pswm = cr.PSWM_gen_folds(train, alphabet, aa_ratios_alphabet) #PSWM for the entire training dataset
 	
 	#Predict on benchmark sequences
-	bench_predictions = pre.predict_seq(bench_X, pswm, alphabet)
+	raw_score = pre.predict_seq(bench_X, pswm, alphabet)
 	
-	#Generating benchmark score dataframe
-	bench_predictions = pd.Series(bench_predictions[:])
-	bench.loc[:,'scores'] = bench_predictions
-	bench.to_csv(image_folder_path+'benchmark_set_scores_raw.csv')
+	return raw_score, best_thresholds
 	
 	
 	
-def benchmark_eval(best_thresholds, image_folder_path):
+def benchmark_eval(bench_fh, best_thresholds, raw_scr, image_folder_path):
 	"""
 	This function will load the file 'benchmark_set_scores.csv' and it will use the column
 	'Class' to obtain y_true and the column 'scores' to obtain y_pred. Then, a classification
 	accuracy procedure will be carried out.
 	
+	bench_fh = the benchmark dataset path
+	
 	best_thresholds = Final list of training thresholds obtained from the cross validation procedure. 
+	
+	raw_scr = this object would be a numpy array containing the vH model's output raw score
+	 on the benchmark examples.
 	
 	Requirements:
 	- skewed_class_eval() function from the cross_validation module. 
@@ -96,8 +138,8 @@ def benchmark_eval(best_thresholds, image_folder_path):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
 	#Extracting the benchmark true scores and predictions
-	_, true_Y = extract_X_and_Y(image_folder_path+'benchmark_set_scores_raw.csv')
-	pred_Y = [int(scr >= optimal_threshold) for scr in bench.loc[:,'scores'].to_list()]
+	_, true_Y = extract_X_and_Y(bench_fh)
+	pred_Y = [int(scr >= optimal_threshold) for scr in raw_scr]
 	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
@@ -120,11 +162,7 @@ def benchmark_eval(best_thresholds, image_folder_path):
 	names = ['MCC', 'Accuracy', 'Precision', 'Recall', 'F1']
 	metric_dict = {name:data for name,data in zip(names, metric_list)} #Obtain error metric
 	
-	#Printing results (replaces raw score with binary prediction)
-	bench.loc[:,'scores'] = y_pred
-	bench.to_csv(image_folder_path+'benchmark_set_scores.csv')
-	
-	return metric_dict
+	return metric_dict, pred_Y
 	
 	
 	
@@ -168,17 +206,14 @@ if __name__ == "__main__":
 	
 	### Workflow###
 	
-	#Finding the best thresholds from the cross-validation score results
-	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
-	best_thresholds = cr.threshold_optimization(n_folds, image_folder_train)
-	
-	#Obtaining the prediction input
-	bench_X, bench_Y = extract_X_and_Y(bench_df)
-	
 	
 	#Threshold evaluation on benchmark
-	benchmark_scores(train_fh, bench_fh, env.alphabet, env.aa_ratios_alphabet, image_folder_bench)
-	results = benchmark_eval(best_thresholds, image_folder_bench)
+	raw_score, best_thresholds = benchmark_scores(train_fh, bench_fh, env.alphabet, env.aa_ratios_alphabet, image_folder_train)
+	results, y_pred = benchmark_eval(bench_fh, best_thresholds, raw_score, image_folder_bench)
+	
+	#Generating final csv file
+	export_predict_df(bench_fh, raw_score, y_pred, image_folder_bench)
+	
 	
 	#Print results
 	print("MCC: %0.2f"%results['MCC'])
