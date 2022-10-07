@@ -137,18 +137,18 @@ def benchmark_eval(bench_fh, best_thresholds, raw_scr, image_folder_path):
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])	
 	
-	#Extracting the benchmark true scores and predictions
-	_, true_Y = extract_X_and_Y(bench_fh)
-	pred_Y = [int(scr >= optimal_threshold) for scr in raw_scr]
-	
 	#Finding the best threshold
 	best_thresholds = np.array(best_thresholds[:])
 	optimal_threshold = np.average(best_thresholds)	
 	
+	#Extracting the benchmark true scores and predictions
+	_, true_Y = extract_X_and_Y(bench_fh)
+	pred_Y = [int(scr >= optimal_threshold) for scr in raw_scr]
+	
 	#Doing the skewed class analysis based on the threshold
 	cm = confusion_matrix(true_Y, pred_Y)	
 	cr.graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, 'bench')
-	cr.graphics_density_distribution(bench_scores, optimal_threshold, image_folder_path, 'bench')
+	cr.graphics_density_distribution(raw_scr, pd.Series(true_Y), optimal_threshold, image_folder_path, 'bench')
 	
 	#Validate statistics
 	MCC = matthews_corrcoef(true_Y, pred_Y)

@@ -117,7 +117,7 @@ def graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, cm_suffi
 	
 
 		
-def graphics_density_distribution(df, optimal_threshold, image_folder_path, dist_suffix):
+def graphics_density_distribution(scores, classes, optimal_threshold, image_folder_path, dist_suffix):
 	"""
 	The purpose of this function is to create density distribution images. 
 	The images represent the distribution of scores according to true classification
@@ -128,6 +128,12 @@ def graphics_density_distribution(df, optimal_threshold, image_folder_path, dist
 	
 	This function has no output, but it produces images that are added to the image_folder_path.
 	
+	scores = this object would be a numpy array containing the vH model's output raw score
+	 on the benchmark examples.
+	 
+	classes = Pandas series of the binary representation of the true (observed) class for each training 
+	example: 0=NO_SP, 1=SP
+	
 	"""
 	#Image folder
 	if not os.path.exists(image_folder_path[:-1]):
@@ -135,10 +141,10 @@ def graphics_density_distribution(df, optimal_threshold, image_folder_path, dist
 	
 	#Score distribution plot
 	plt.figure() #ensures a clean canvas before plotting
-	sn.kdeplot(df.loc[:,'scores'], shade=True, hue=df.loc[:,'Class']).set(xlabel='Test set "%s" score distribution'%(dist_suffix))
+	sn.kdeplot(scores, shade=True, hue=classes).set(xlabel='Test set "%s" score distribution'%(dist_suffix))
 	children = plt.gca().get_children() #Extracting the plot handles in order to pass them to plt.legend
 	l = plt.axvline(optimal_threshold, 0, 1, c='r')
-	plt.legend([children[1], children[0], l], df.loc[:,'Class'].unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
+	plt.legend([children[1], children[0], l], classes.unique().tolist()+['Threshold = %0.2f'%(optimal_threshold)])
 	plt.savefig(image_folder_path+'test_score_dist_%s.png'%(dist_suffix), bbox_inches='tight')
 	plt.close()		
 	
