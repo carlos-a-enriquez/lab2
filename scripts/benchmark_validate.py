@@ -9,7 +9,8 @@ import numpy as np
 
 #from sklearn.metrics import precision_recall_curve
 #from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, matthews_corrcoef, precision_score, \
+recall_score, f1_score, accuracy_score
 #from confusion_matrix.cf_matrix import make_confusion_matrix
 
 import environmental_variables as env

@@ -244,7 +244,7 @@ def threshold_optimization(n_folds, image_folder_path):
 		cm = confusion_matrix_generator(df_test, optimal_threshold)
 		cm_list.append(cm) #Appending cm to list
 		graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, str(fold))
-		graphics_density_distribution(df_test, optimal_threshold, image_folder_path, str(fold))
+		graphics_density_distribution(df_test.loc[:, 'scores'], df_test.loc[:, 'Class'], optimal_threshold, image_folder_path, str(fold))
 		
 	#Obtaining the average cm and printing it
 	avg_cm = average_confusion_matrix(cm_list)
