@@ -7,7 +7,7 @@
 
 ### 1. Training cross validation and benchmark evaluation
 ```
-command time -v ./benchmark_validate.py ../input_data/training_set.tsv ../output_graphs3 ../input_data/benchmark_set.tsv y
+command time -v ./benchmark_validate.py ../input_data/training_set.tsv ../output_graphs3 ../input_data/benchmark_set.tsv n > ../output_graphs3/benchmark/eval_stats.txt
 
 ```
 
