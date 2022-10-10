@@ -237,14 +237,20 @@ def threshold_optimization(n_folds, image_folder_path):
 		optimal_threshold = th[index]
 		threshold_list.append(optimal_threshold)       
 
-		#Extracting testing dataframe
+		#Extracting testing dataframe, known classes and predicted classes
 		df_test = pd.read_csv(image_folder_path+'iteration_%d_vh_testing.csv'%(fold))
+		y_true_test = [int(val == 'SP') for val in df_test.loc[:,'Class'].tolist()]
+		y_pred_test = [int(scr >= optimal_threshold) for scr in df_test.loc[:,'scores'].to_list()]
+		
 
 		#Doing skewed class evaluation on this test set iteration (df_test)
-		cm = confusion_matrix_generator(df_test, optimal_threshold)
+		cm = confusion_matrix(y_true_test, y_pred_test)
 		cm_list.append(cm) #Appending cm to list
 		graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, str(fold))
 		graphics_density_distribution(df_test.loc[:, 'scores'], df_test.loc[:, 'Class'], optimal_threshold, image_folder_path, str(fold))
+		
+		#Obtaining additional statistics
+		
 		
 	#Obtaining the average cm and printing it
 	avg_cm = average_confusion_matrix(cm_list)
