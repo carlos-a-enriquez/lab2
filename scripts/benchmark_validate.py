@@ -106,7 +106,7 @@ def benchmark_scores(train_fh, bench_fh, alphabet, aa_ratios_alphabet, image_fol
 	
 	#Finding the best thresholds from the cross-validation score results
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
-	best_thresholds = cr.threshold_optimization(n_folds, image_folder_path)
+	best_thresholds, _ = cr.threshold_optimization(n_folds, image_folder_path)
 		
 	#PSWM profile generation for training dataset
 	pswm = cr.PSWM_gen_folds(train, alphabet, aa_ratios_alphabet) #PSWM for the entire training dataset
