@@ -161,7 +161,7 @@ def benchmark_eval(bench_fh, best_thresholds, raw_scr, image_folder_path):
 	
 	#Metrics
 	names = ['MCC', 'Accuracy', 'Precision', 'Recall', 'F1']
-	metric_dict = {name:data for name,data in zip(names, metric_list)} #Obtain error metric
+	metric_dict = dict(zip(names, metric_list)) #Obtain error metric
 	
 	return metric_dict, pred_Y
 	

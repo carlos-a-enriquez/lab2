@@ -7,17 +7,16 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 #from sklearn.preprocessing import OneHotEncoder
 
-from sklearn.metrics import precision_recall_curve
 #from sklearn.metrics import roc_curve
-from sklearn.metrics import auc
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, matthews_corrcoef, precision_score, \
+recall_score, f1_score, accuracy_score, auc, precision_recall_curve
 from confusion_matrix.cf_matrix import make_confusion_matrix
 
 import environmental_variables as env
 import vH_train as tra
 import vH_predict as pre
 
-
+start_time = time.time()
 
 def PSWM_gen_folds(train, alphabet, aa_ratios_alphabet):
 	'''
@@ -205,6 +204,9 @@ def threshold_optimization(n_folds, image_folder_path):
 	#Image folder
 	if not os.path.exists(image_folder_path[:-1]):
 		os.system('mkdir -p -v '+image_folder_path[:-1])
+		
+	#Instantiating the statistic list
+	mcc_list, acc_list, prec_list, rec_list , f1_list= [], [], [], [], []	
 	
 	#Obtaining the thresholds for each cross-validation iteration
 	for fold in range(n_folds):
@@ -249,14 +251,29 @@ def threshold_optimization(n_folds, image_folder_path):
 		graphics_confusion_matrix(cm, optimal_threshold, image_folder_path, str(fold))
 		graphics_density_distribution(df_test.loc[:, 'scores'], df_test.loc[:, 'Class'], optimal_threshold, image_folder_path, str(fold))
 		
-		#Obtaining additional statistics
+		#Obtaining additional skewed-class statistics
+		mcc_list.append(matthews_corrcoef(y_true_test, y_pred_test)) 
+		acc_list.append(accuracy_score(y_true_test, y_pred_test))
+		prec_list.append(precision_score(y_true_test, y_pred_test, zero_division=0))
+		rec_list.append(recall_score(y_true_test, y_pred_test, zero_division=0))
+		f1_list.append(f1_score(y_true_test, y_pred_test))
+		
 		
 		
 	#Obtaining the average cm and printing it
 	avg_cm = average_confusion_matrix(cm_list)
 	graphics_confusion_matrix(avg_cm, 'NaN', image_folder_path, 'average')
 	
-	return threshold_list
+	#Turning statistic lists to arrays
+	mcc_list, acc_list, prec_list, rec_list , f1_list = np.array(MCC_list[:]), np.array(acc_list[:]), np.array(prec_list[:]), \
+	np.array(rec_list[:]), np.array(f1_list[:])
+	metric_lists = mcc_list, acc_list, prec_list, rec_list , f1_list
+	
+	#Obtaining the averages and the standard error
+	names = ['MCC', 'Accuracy', 'Precision', 'Recall', 'F1']
+	metrics = {name:(np.mean(data), (np.std(data, ddof=1) / np.sqrt(np.size(data)))) for name,data in zip(names, metric_lists)} #Obtain average, standard error pairs for each metric
+	
+	return threshold_list, metrics
 	
 	
 	
@@ -269,12 +286,15 @@ def threshold_optimization(n_folds, image_folder_path):
 if __name__ == "__main__":
 	#Opening the input examples file and defining the output image folder path
 	try:
-		train_fh = sys.argv[1]
-		image_folder_path = sys.argv[2]
+		train_fh = sys.argv[1] 
+		image_folder_train = sys.argv[2] + 'train/'
+		cross_validate= sys.argv[3] #Write yes to specifiy that the cross_validation_init code must be executed again
 	except IndexError:
 		train_fh = input("insert the training data path   ")
-		image_folder_path = input("insert the output image folder path  ")
+		image_folder_train = input("insert the output image folder path  ") + 'train/'
+		cross_validate= input("Should the cross-validation procedure be repeated for the training data? (Y/N)  ")
 	
+	#Prepping image_folder path
 	if image_folder_path[-1] != "/":
 		image_folder_path += "/"		
 		
@@ -283,11 +303,24 @@ if __name__ == "__main__":
 	train = pd.read_csv(train_fh, sep='\t')
 	
 	#Generating the scores for cross_validation
-	cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet)
-	#print(result) #debug
+	if cross_validate.lower()[0] == "y":
+		print("Repeating cross-validation data frame generation")
+		cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet, image_folder_train
+	else:
+		print("The cross-validation data frame (with scores) generation procedure was skipped")
 	
 	#Finding the best threshold from the cross-validation score results
 	n_folds = len(train.loc[:,'Cross-validation fold'].unique().tolist())
-	best_thresholds = threshold_optimization(n_folds, image_folder_path)
+	best_thresholds, stats = threshold_optimization(n_folds, image_folder_train)
+	
+	#Printing out metric results
+	print("Training vH Cross-validation statistics")
+	print("MCC: %0.2f +/- %0.2f"%stats['MCC'])
+	print("Accuracy: %0.2f +/- %0.2f"%stats['Accuracy'])
+	print("Precision: %0.2f +/- %0.2f"%stats['Precision'])
+	print("Recall: %0.2f +/- %0.2f"%stats['Recall'])
+	print("F1: %0.2f +/- %0.2f"%stats['F1'])
+	print("--- %0.2f seconds ---" % (time.time() - start_time))
+	
 	
 	
