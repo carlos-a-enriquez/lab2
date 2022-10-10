@@ -1,0 +1,7 @@
+The cross-validation data frame (with scores) generation procedure was skipped
+MCC: 0.58
+Accuracy: 0.97
+Precision: 0.47
+Recall: 0.75
+F1: 0.58
+--- 15.64 seconds ---
