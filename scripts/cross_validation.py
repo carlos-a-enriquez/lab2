@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import sys, os
+import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -265,7 +266,7 @@ def threshold_optimization(n_folds, image_folder_path):
 	graphics_confusion_matrix(avg_cm, 'NaN', image_folder_path, 'average')
 	
 	#Turning statistic lists to arrays
-	mcc_list, acc_list, prec_list, rec_list , f1_list = np.array(MCC_list[:]), np.array(acc_list[:]), np.array(prec_list[:]), \
+	mcc_list, acc_list, prec_list, rec_list , f1_list = np.array(mcc_list[:]), np.array(acc_list[:]), np.array(prec_list[:]), \
 	np.array(rec_list[:]), np.array(f1_list[:])
 	metric_lists = mcc_list, acc_list, prec_list, rec_list , f1_list
 	
@@ -287,16 +288,17 @@ if __name__ == "__main__":
 	#Opening the input examples file and defining the output image folder path
 	try:
 		train_fh = sys.argv[1] 
-		image_folder_train = sys.argv[2] + 'train/'
+		image_folder_train = sys.argv[2] 
 		cross_validate= sys.argv[3] #Write yes to specifiy that the cross_validation_init code must be executed again
 	except IndexError:
 		train_fh = input("insert the training data path   ")
-		image_folder_train = input("insert the output image folder path  ") + 'train/'
+		image_folder_train = input("insert the output image folder path  ") 
 		cross_validate= input("Should the cross-validation procedure be repeated for the training data? (Y/N)  ")
 	
 	#Prepping image_folder path
-	if image_folder_path[-1] != "/":
-		image_folder_path += "/"		
+	if image_folder_train[-1] != "/":
+		image_folder_train += "/"		
+	image_folder_train += 'train/' #adding the train subdirectory
 		
 	
 	#Loading the train file
@@ -305,7 +307,7 @@ if __name__ == "__main__":
 	#Generating the scores for cross_validation
 	if cross_validate.lower()[0] == "y":
 		print("Repeating cross-validation data frame generation")
-		cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet, image_folder_train
+		cross_validation_init(train, env.alphabet, env.aa_ratios_alphabet, image_folder_train)
 	else:
 		print("The cross-validation data frame (with scores) generation procedure was skipped")
 	

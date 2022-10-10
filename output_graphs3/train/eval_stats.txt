@@ -1,0 +1,8 @@
+The cross-validation data frame (with scores) generation procedure was skipped
+Training vH Cross-validation statistics
+MCC: 0.79 +/- 0.02
+Accuracy: 0.95 +/- 0.00
+Precision: 0.84 +/- 0.03
+Recall: 0.80 +/- 0.02
+F1: 0.82 +/- 0.01
+--- 4.79 seconds ---
