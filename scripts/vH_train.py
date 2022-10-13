@@ -6,7 +6,12 @@ import numpy as np
 #from sklearn.preprocessing import OneHotEncoder
 import environmental_variables as env
 
+""" 
+The PSWM matrix is constructed with 20 rows (representing the 20 amino acids)
+and as many columns as positions in the analyzed cleavage sequence. 
 
+The order of the rows is that of the alphabet found in env.alphabet. 
+"""
 
 
 
