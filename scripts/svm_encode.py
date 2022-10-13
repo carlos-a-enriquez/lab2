@@ -37,7 +37,7 @@ def encode_sequences(sequences, k, alphabet):
 	
 	Returns a numpy array in which axis 0 corresponds to different examples 
 	and axis 1 corresponds to the different residue composition values. So, an array
-	of shape (m,20) where n is the number of examples. 
+	of shape (m,20) where m is the number of examples. 
 	"""
 	
 	#Initialization
