@@ -37,7 +37,9 @@ def encode_seq(sequence, alphabet):
     """ One hot encoding will generate one numpy matrix for each sequence.
     This is a binary representation in which each 'inner list' has one 1 value that corresponds to one of the
     latters of the alphabet.
-    Note: This function expects a single sequence"""
+    Note: This function expects a single sequence
+    Source: https://stackoverflow.com/a/69268524
+    """
     #alphabet = ['A', 'C', 'D', 'E', 'F', 'G','H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
     char_to_int = dict((c, i) for i, c in enumerate(alphabet))
     integer_encoded = [char_to_int[char] for char in sequence]
