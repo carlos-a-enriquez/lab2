@@ -18,4 +18,8 @@
 7. vH PSWM benchmark false positive analysis
 8. SVM benchmark false positive analysis
 9. vH PSWM and SVM false negative analysis
-- Note: Step 9 has no corresponding python scripts. Only a jupyter notebook is available. (See jupyter_notebooks.tar.gz) 
+- Note: Step 9 has no corresponding python scripts. Only a jupyter notebook is available. (See jupyter_notebooks.tar.gz)
+
+## Data availability
+The training and benchmark datasets can be accessed from [here](input_data/)
+ 
